@@ -85,17 +85,52 @@ class ValueWithErrors
         return $this->errors;
     }
 
-    public function next(callable $mapping): self
+    public function next(callable $check): self
     {
         if ($this->stop) {
             return $this;
         }
 
-        $nextValueWithErrors = $mapping($this);
+        $nextValueWithErrors = $check($this);
         if (!isset($nextValueWithErrors) || !($nextValueWithErrors instanceof self)) {
             return $this;
         }
         return $nextValueWithErrors;
+    }
+
+    /**
+     * Peeks the callable which produces the least amount of errors.
+     */
+    public function oneOf(callable ...$checks): self
+    {
+        if ($this->stop || count($checks) === 0) {
+            return $this;
+        }
+
+        $withMinErrors = null;
+        foreach ($checks as $check) {
+            $nextValueWithErrors = $check($this);
+
+            // Peek the first one which does not produce any errors
+            if (!isset($nextValueWithErrors) || !($nextValueWithErrors instanceof self)) {
+                $withMinErrors = $this;
+                break;
+            }
+
+            if (
+                is_null($withMinErrors) ||
+                count($withMinErrors->errors()) > count($nextValueWithErrors->errors())
+            ) {
+                $withMinErrors = $nextValueWithErrors;
+            }
+        }
+
+        assert(
+            !is_null($withMinErrors),
+            'Impossible, since null values are handled inside the loop.',
+        );
+
+        return $withMinErrors;
     }
 
     public function catchAndStop(?callable $onErrors = null)
