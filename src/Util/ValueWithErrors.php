@@ -8,7 +8,7 @@ use LogicException;
 
 /**
  * Useful when you want to make a series of independent tests for the value and collect every single
- * error instead of short-curcuiting after the first one. Then you would do something like:
+ * error instead of short-circuiting after the first one. Then you would do something like:
  *
  * ```php
  * $isInt =
@@ -47,6 +47,11 @@ class ValueWithErrors
         return new self(
             errors: [$error],
         );
+    }
+
+    public static function makeNothing(): self
+    {
+        return new self;
     }
 
     public function __construct(
@@ -98,6 +103,17 @@ class ValueWithErrors
         return $nextValueWithErrors;
     }
 
+    public function nextShortCircuit(callable $check): self
+    {
+        $nextValueWithErrors = $this->next($check);
+
+        if (count($nextValueWithErrors->errors()) > count($this->errors())) {
+            return $nextValueWithErrors->catchAndStop();
+        }
+
+        return $nextValueWithErrors;
+    }
+
     /**
      * Peeks the callable which produces the least amount of errors.
      */
@@ -107,30 +123,37 @@ class ValueWithErrors
             return $this;
         }
 
-        $withMinErrors = null;
+        $withMinErrors = $this;
         foreach ($checks as $check) {
             $nextValueWithErrors = $check($this);
 
             // Peek the first one which does not produce any errors
-            if (!isset($nextValueWithErrors) || !($nextValueWithErrors instanceof self)) {
-                $withMinErrors = $this;
+            if (
+                !isset($nextValueWithErrors) ||
+                !($nextValueWithErrors instanceof self) ||
+                count($withMinErrors->errors()) == count($nextValueWithErrors->errors())
+            ) {
+                $withMinErrors = $nextValueWithErrors;
                 break;
             }
 
-            if (
-                is_null($withMinErrors) ||
-                count($withMinErrors->errors()) > count($nextValueWithErrors->errors())
-            ) {
+            if (count($withMinErrors->errors()) > count($nextValueWithErrors->errors())) {
                 $withMinErrors = $nextValueWithErrors;
             }
         }
 
-        assert(
-            !is_null($withMinErrors),
-            'Impossible, since null values are handled inside the loop.',
-        );
-
         return $withMinErrors;
+    }
+
+    public function oneOfShortCircuit(callable ...$checks): self
+    {
+        $nextValueWithErrors = $this->oneOf(...$checks);
+
+        if (count($nextValueWithErrors->errors()) > count($this->errors())) {
+            return $nextValueWithErrors->catchAndStop();
+        }
+
+        return $nextValueWithErrors;
     }
 
     public function catchAndStop(?callable $onErrors = null)
@@ -161,6 +184,18 @@ class ValueWithErrors
 
         $newValueWithErrors = clone $this;
         $newValueWithErrors->value = $valueMapping($this->value());
+        return $newValueWithErrors;
+    }
+
+    public function setValue(mixed $value): self
+    {
+        if ($this->stop) {
+            return $this;
+        }
+
+        $newValueWithErrors = clone $this;
+        $newValueWithErrors->value = $value;
+        $newValueWithErrors->hasValue = true;
         return $newValueWithErrors;
     }
 }
