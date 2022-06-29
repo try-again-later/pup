@@ -15,6 +15,8 @@ class Schema
     private mixed $defaultValue = null;
     private bool $hasDefault = false;
 
+    protected bool $allowCoercions = false;
+
     public static function string(): StringSchema
     {
         return new StringSchema;
@@ -43,6 +45,13 @@ class Schema
         } else {
             $newSchema->defaultValue = $defaultValue;
         }
+        return $newSchema;
+    }
+
+    public function allowCoercions(): static
+    {
+        $newSchema = clone $this;
+        $newSchema->allowCoercions = true;
         return $newSchema;
     }
 

@@ -123,7 +123,7 @@ class ValueWithErrors
             return $this;
         }
 
-        $withMinErrors = $this;
+        $withMinErrors = null;
         foreach ($checks as $check) {
             $nextValueWithErrors = $check($this);
 
@@ -131,13 +131,16 @@ class ValueWithErrors
             if (
                 !isset($nextValueWithErrors) ||
                 !($nextValueWithErrors instanceof self) ||
-                count($withMinErrors->errors()) == count($nextValueWithErrors->errors())
+                count($this->errors()) == count($nextValueWithErrors->errors())
             ) {
                 $withMinErrors = $nextValueWithErrors;
                 break;
             }
 
-            if (count($withMinErrors->errors()) > count($nextValueWithErrors->errors())) {
+            if (
+                !isset($withMinErrors) ||
+                count($withMinErrors->errors()) > count($nextValueWithErrors->errors())
+            ) {
                 $withMinErrors = $nextValueWithErrors;
             }
         }
