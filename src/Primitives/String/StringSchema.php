@@ -2,11 +2,11 @@
 
 declare(strict_types = 1);
 
-namespace TryAgainLater\Pup\Primitives;
+namespace TryAgainLater\Pup\Primitives\String;
 
 use InvalidArgumentException;
-
 use TryAgainLater\Pup\Util\ValueWithErrors;
+use TryAgainLater\Pup\Primitives\ScalarSchema;
 
 class StringSchema extends ScalarSchema
 {
@@ -19,7 +19,7 @@ class StringSchema extends ScalarSchema
         $withErrors = parent::validate($value, nothing: func_num_args() === 0 || $nothing);
 
         return $withErrors
-            ->next($this->validateLength(...))
+            ->next($this->validateExactLength(...))
             ->next($this->validateMinLength(...))
             ->next($this->validateMaxLength(...));
     }
@@ -60,64 +60,27 @@ class StringSchema extends ScalarSchema
         return $newSchema;
     }
 
-    protected function isString(ValueWithErrors $withErrors)
-    {
-        $value = $withErrors->value();
-        if (is_null($value) || is_string($value)) {
-            return $withErrors;
-        }
-        return $withErrors->pushError('The value is not a string.');
-    }
-
-    protected function fromBool(ValueWithErrors $withErrors)
-    {
-        if (!is_bool($withErrors->value())) {
-            return $withErrors->pushError('The value is not a bool.');
-        }
-        return $withErrors->mapValue(fn ($bool) => $bool ? 'true' : 'false');
-    }
-
-    protected function fromNumber(ValueWithErrors $withErrors)
-    {
-        if (is_int($withErrors->value()) || is_float($withErrors->value())) {
-            return $withErrors->mapValue(fn ($number) => strval($number));
-        }
-        return $withErrors->pushError('The value is not a number.');
-    }
-
     protected function checkType(ValueWithErrors $withErrors): ValueWithErrors
     {
-        return $withErrors->next($this->isString(...));
+        return $withErrors->next(StringUtils::isNullableString(...));
     }
 
     protected function coerceToType(ValueWithErrors $withErrors): ValueWithErrors
     {
         return $withErrors->
             oneOf(
-                $this->fromBool(...),
-                $this->fromNumber(...),
+                StringUtils::fromBool(...),
+                StringUtils::fromNumber(...),
             );
     }
 
-    protected function validateLengthPredicate(
-        ValueWithErrors $withErrors,
-        callable $lengthPredicate,
-        callable $errorMessageGenerator,
-    ): ValueWithErrors
-    {
-        if (!$lengthPredicate(strlen($withErrors->value()))) {
-            return $withErrors->pushError($errorMessageGenerator($withErrors->value()));
-        }
-        return $withErrors;
-    }
-
-    protected function validateLength(ValueWithErrors $withErrors): ValueWithErrors
+    protected function validateExactLength(ValueWithErrors $withErrors): ValueWithErrors
     {
         if (!isset($this->exactLength)) {
             return $withErrors;
         }
 
-        return $this->validateLengthPredicate(
+        return StringUtils::validateLengthPredicate(
             $withErrors,
             fn ($length) => $length === $this->exactLength,
             fn () => "String is required to have length '$this->exactLength'.",
@@ -130,7 +93,7 @@ class StringSchema extends ScalarSchema
             return $withErrors;
         }
 
-        return $this->validateLengthPredicate(
+        return StringUtils::validateLengthPredicate(
             $withErrors,
             fn ($length) => $length >= $this->minLength,
             fn () => "String is required to be at least '$this->minLength' characters long.",
@@ -143,7 +106,7 @@ class StringSchema extends ScalarSchema
             return $withErrors;
         }
 
-        return $this->validateLengthPredicate(
+        return StringUtils::validateLengthPredicate(
             $withErrors,
             fn ($length) => $length <= $this->maxLength,
             fn () => "String is required to be at most '$this->maxLength' characters long.",

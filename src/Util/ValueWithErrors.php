@@ -25,7 +25,7 @@ use LogicException;
  *
  * $value = ValueWithErrors::makeValue(12345)
  *     ->next($isInt)
- *     ->catchAndStop
+ *     ->catchAndStop()
  *
  *     ->next($isNotNegative)
  *     ->next($lessThan65536)
@@ -169,6 +169,16 @@ class ValueWithErrors
         if (isset($onErrors)) {
             $onErrors($newValueWithErrors);
         }
+        return $newValueWithErrors;
+    }
+
+    public function stopIfValueIs(?callable $valuePredicate)
+    {
+        if ($this->stop) {
+            return $this;
+        }
+        $newValueWithErrors = clone $this;
+        $newValueWithErrors->stop = boolval($valuePredicate($this->value()));
         return $newValueWithErrors;
     }
 

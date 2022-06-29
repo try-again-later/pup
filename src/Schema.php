@@ -4,7 +4,9 @@ declare(strict_types = 1);
 
 namespace TryAgainLater\Pup;
 
-use TryAgainLater\Pup\Primitives\StringSchema;
+use LogicException;
+
+use TryAgainLater\Pup\Primitives\String\StringSchema;
 use TryAgainLater\Pup\Util\ValueWithErrors;
 
 class Schema
@@ -16,9 +18,8 @@ class Schema
     private bool $hasDefault = false;
     private bool $replaceNullWithDefault = false;
 
-    protected bool $allowCoercions = false;
-
-    protected array $userDefinedTransforms = [];
+    private bool $allowCoercions = false;
+    private array $userDefinedTransforms = [];
 
     public static function string(): StringSchema
     {
@@ -85,12 +86,13 @@ class Schema
             : ValueWithErrors::makeValue($value);
 
         return $withErrors
-            ->next($this->setDefault(...))
+            ->next($this->applyDefault(...))
             ->nextShortCircuit($this->validateRequired(...))
             ->nextShortCircuit($this->validateNullable(...))
             ->nextShortCircuit($this->applyReplaceNullWithDefault(...))
-            ->nextShortCircuit($this->defaultCoercion(...))
-            ->next($this->applyUserDefinedTransforms(...));
+            ->nextShortCircuit($this->applyCoercions(...))
+            ->next($this->applyUserDefinedTransforms(...))
+            ->stopIfValueIs(fn ($value) => is_null($value));
     }
 
     protected function validateRequired(ValueWithErrors $withErrors): ValueWithErrors
@@ -115,7 +117,7 @@ class Schema
         return $withErrors;
     }
 
-    protected function setDefault(ValueWithErrors $withErrors): ValueWithErrors
+    protected function applyDefault(ValueWithErrors $withErrors): ValueWithErrors
     {
         if (!$this->hasDefault) {
             return $withErrors;
@@ -147,17 +149,15 @@ class Schema
 
     protected function checkType(ValueWithErrors $withErrors): ValueWithErrors
     {
-        // Do nothing by default
-        return $withErrors;
+        throw new LogicException('Not implemented');
     }
 
     protected function coerceToType(ValueWithErrors $withErrors): ValueWithErrors
     {
-        // Do nothing by default
-        return $withErrors;
+        return $withErrors->pushError('Coercions are not supported.');
     }
 
-    protected function defaultCoercion(ValueWithErrors $withErrors): ValueWithErrors
+    protected function applyCoercions(ValueWithErrors $withErrors): ValueWithErrors
     {
         if (!$this->allowCoercions) {
             return $withErrors
