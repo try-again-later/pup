@@ -159,15 +159,15 @@ class ValueWithErrors
         return $nextValueWithErrors;
     }
 
-    public function catchAndStop(?callable $onErrors = null)
+    public function catchAndStop(?callable $onError = null)
     {
         if (!$this->hasErrors() || $this->stop) {
             return $this;
         }
         $newValueWithErrors = clone $this;
         $newValueWithErrors->stop = true;
-        if (isset($onErrors)) {
-            $onErrors($newValueWithErrors);
+        if (isset($onError)) {
+            $onError($newValueWithErrors);
         }
         return $newValueWithErrors;
     }
@@ -189,6 +189,25 @@ class ValueWithErrors
         return $newValueWithErrors;
     }
 
+    public function pushErrorIf(
+        callable $if,
+        callable | string $error,
+    ): self {
+        if ($this->stop) {
+            return $this;
+        }
+
+        if ($if($this->value())) {
+            $error = match (is_callable($error)) {
+                true => $error($this->value()),
+                false => $error,
+            };
+
+            return $this->pushError($error);
+        }
+        return $this;
+    }
+
     public function dropErrors(): self
     {
         $newValueWithErrors = clone $this;
@@ -207,6 +226,27 @@ class ValueWithErrors
             $newValueWithErrors->value = $valueMapping($newValueWithErrors->value());
         }
         return $newValueWithErrors;
+    }
+
+    public function mapValueIf(
+        callable $map,
+        callable $if,
+        callable | string $error,
+    ): self
+    {
+        if ($this->stop) {
+            return $this;
+        }
+
+        if (!$if($this->value())) {
+            $error = match (is_callable($error)) {
+                true => $error($this->value()),
+                false => $error,
+            };
+
+            return $this->pushError($error);
+        }
+        return $this->mapValue($map);
     }
 
     public function setValue(mixed $value): self

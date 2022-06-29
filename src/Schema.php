@@ -6,7 +6,7 @@ namespace TryAgainLater\Pup;
 
 use LogicException;
 
-use TryAgainLater\Pup\Primitives\String\StringSchema;
+use TryAgainLater\Pup\Primitives\StringSchema;
 use TryAgainLater\Pup\Util\ValueWithErrors;
 
 abstract class Schema

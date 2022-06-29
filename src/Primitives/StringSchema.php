@@ -2,9 +2,10 @@
 
 declare(strict_types = 1);
 
-namespace TryAgainLater\Pup\Primitives\String;
+namespace TryAgainLater\Pup\Primitives;
 
 use InvalidArgumentException;
+
 use TryAgainLater\Pup\Util\ValueWithErrors;
 use TryAgainLater\Pup\Primitives\ScalarSchema;
 
@@ -62,54 +63,55 @@ class StringSchema extends ScalarSchema
 
     protected function checkType(ValueWithErrors $withErrors): ValueWithErrors
     {
-        return $withErrors->next(StringUtils::isNullableString(...));
+        return $withErrors->pushErrorIf(
+            fn ($value) => !is_string($value) && !is_null($value),
+            'The value is not a string',
+        );
     }
 
     protected function coerceToType(ValueWithErrors $withErrors): ValueWithErrors
     {
-        return $withErrors->
-            oneOf(
-                StringUtils::fromBool(...),
-                StringUtils::fromNumber(...),
+        $fromBool = fn (ValueWithErrors $withErrors) =>
+            $withErrors->mapValueIf(
+                map: fn ($bool) => $bool ? 'true' : 'false',
+                if: is_bool(...),
+                error: 'The value is not a bool.',
             );
+
+        $fromNumber = fn (ValueWithErrors $withErrors) =>
+            $withErrors->mapValueIf(
+                map: strval(...),
+                if: fn ($value) => is_int($value) || is_float($value),
+                error: 'The value is not a number.',
+            );
+
+        return $withErrors->oneOf(
+            $fromBool,
+            $fromNumber,
+        );
     }
 
     protected function validateExactLength(ValueWithErrors $withErrors): ValueWithErrors
     {
-        if (!isset($this->exactLength)) {
-            return $withErrors;
-        }
-
-        return StringUtils::validateLengthPredicate(
-            $withErrors,
-            fn ($length) => $length === $this->exactLength,
-            fn () => "String is required to have length '$this->exactLength'.",
+        return $withErrors->pushErrorIf(
+            if: fn ($string) => isset($this->exactLength) && strlen($string) !== $this->exactLength,
+            error: "String is required to have length '$this->exactLength'",
         );
     }
 
     protected function validateMinLength(ValueWithErrors $withErrors): ValueWithErrors
     {
-        if (!isset($this->minLength)) {
-            return $withErrors;
-        }
-
-        return StringUtils::validateLengthPredicate(
-            $withErrors,
-            fn ($length) => $length >= $this->minLength,
-            fn () => "String is required to be at least '$this->minLength' characters long.",
+        return $withErrors->pushErrorIf(
+            if: fn ($string) => isset($this->minLength) && strlen($string) < $this->minLength,
+            error: "String is required to be at least '$this->minLength' characters long.",
         );
     }
 
     protected function validateMaxLength(ValueWithErrors $withErrors): ValueWithErrors
     {
-        if (!isset($this->maxLength)) {
-            return $withErrors;
-        }
-
-        return StringUtils::validateLengthPredicate(
-            $withErrors,
-            fn ($length) => $length <= $this->maxLength,
-            fn () => "String is required to be at most '$this->maxLength' characters long.",
+        return $withErrors->pushErrorIf(
+            if: fn ($string) => isset($this->maxLength) && strlen($string) > $this->maxLength,
+            error: "String is required to be at most '$this->maxLength' characters long.",
         );
     }
 }

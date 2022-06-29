@@ -1,3 +1,3 @@
 # Pup
 
- A small PHP library for creating enums with cases backed by multiple values.
+  A small PHP library for value parsing and validation inspired by [yup](https://github.com/jquense/yup).
