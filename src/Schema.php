@@ -7,7 +7,7 @@ namespace TryAgainLater\Pup;
 use TryAgainLater\Pup\Primitives\StringSchema;
 use TryAgainLater\Pup\Util\ValueWithErrors;
 
-abstract class Schema
+class Schema
 {
     private bool $required = false;
     private bool $nullable = false;
@@ -48,7 +48,7 @@ abstract class Schema
 
     public function isValid(mixed $value = null): bool
     {
-        return $this->validate(nothing: func_num_args() === 0)->hasValue();
+        return $this->validate($value, nothing: func_num_args() === 0)->hasValue();
     }
 
     public function validate(mixed $value = null, bool $nothing = false): ValueWithErrors
@@ -74,8 +74,6 @@ abstract class Schema
 
     protected function validateNullable(ValueWithErrors $withErrors): ValueWithErrors
     {
-        echo '!!!';
-
         if (!$withErrors->hasValue() || $this->nullable) {
             return $withErrors;
         }
