@@ -24,7 +24,7 @@ abstract class NumberSchema extends ScalarSchema
 
         return $withErrors
             ->next($this->validateMin(...))
-            ->next($this->validateMin(...));
+            ->next($this->validateMax(...));
     }
 
     public function min(int | float $min): static
@@ -72,14 +72,14 @@ abstract class NumberSchema extends ScalarSchema
     protected function validateMin(ValueWithErrors $withErrors): ValueWithErrors
     {
         $error =
-            'The number must be greater than' .
+            'The number must be greater than ' .
             ($this->minIsReachable ? 'or equal to ' : '') .
             "$this->min.";
 
         return $withErrors->pushErrorIf(
             if: fn ($number) =>
                 isset($this->min) &&
-                ($number > $this->min || $number === $this->min && $this->minIsReachable),
+                ($number < $this->min || $number === $this->min && !$this->minIsReachable),
             error: $error,
         );
     }
@@ -87,14 +87,14 @@ abstract class NumberSchema extends ScalarSchema
     protected function validateMax(ValueWithErrors $withErrors): ValueWithErrors
     {
         $error =
-            'The number must be smaller than' .
+            'The number must be smaller than ' .
             ($this->maxIsReachable ? 'or equal to ' : '') .
             "$this->max.";
 
         return $withErrors->pushErrorIf(
             if: fn ($number) =>
                 isset($this->max) &&
-                ($number > $this->max || $number === $this->max && $this->maxIsReachable),
+                ($number > $this->max || $number === $this->max && !$this->maxIsReachable),
             error: $error,
         );
     }

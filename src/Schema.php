@@ -4,9 +4,7 @@ declare(strict_types = 1);
 
 namespace TryAgainLater\Pup;
 
-use LogicException;
-
-use TryAgainLater\Pup\Primitives\StringSchema;
+use TryAgainLater\Pup\Primitives\{FloatSchema, IntSchema, StringSchema};
 use TryAgainLater\Pup\Util\ValueWithErrors;
 
 abstract class Schema
@@ -28,6 +26,16 @@ abstract class Schema
     public static function string(): StringSchema
     {
         return new StringSchema;
+    }
+
+    public static function int(): IntSchema
+    {
+        return new IntSchema;
+    }
+
+    public static function float(): FloatSchema
+    {
+        return new FloatSchema;
     }
 
     public function required(): static
