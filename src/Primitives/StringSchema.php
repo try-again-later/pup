@@ -6,10 +6,9 @@ namespace TryAgainLater\Pup\Primitives;
 
 use InvalidArgumentException;
 
-use TryAgainLater\Pup\Schema;
 use TryAgainLater\Pup\Util\ValueWithErrors;
 
-class StringSchema extends Schema
+class StringSchema extends ScalarSchema
 {
     private ?int $exactLength = null;
     private ?int $minLength = null;
