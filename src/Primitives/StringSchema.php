@@ -19,8 +19,6 @@ class StringSchema extends ScalarSchema
         $withErrors = parent::validate($value, nothing: func_num_args() === 0 || $nothing);
 
         return $withErrors
-            ->nextShortCircuit($this->defaultCoercion(...))
-            ->next($this->applyUserDefinedTransforms(...))
             ->next($this->validateLength(...))
             ->next($this->validateMinLength(...))
             ->next($this->validateMaxLength(...));
@@ -87,14 +85,15 @@ class StringSchema extends ScalarSchema
         return $withErrors->pushError('The value is not a number.');
     }
 
-    protected function defaultCoercion(ValueWithErrors $withErrors): ValueWithErrors
+    protected function checkType(ValueWithErrors $withErrors): ValueWithErrors
     {
-        if (!$this->allowCoercions) {
-            return $withErrors
-                ->next($this->isString(...));
-        }
-        return $withErrors
-            ->oneOf(
+        return $withErrors->next($this->isString(...));
+    }
+
+    protected function coerceToType(ValueWithErrors $withErrors): ValueWithErrors
+    {
+        return $withErrors->
+            oneOf(
                 $this->fromBool(...),
                 $this->fromNumber(...),
             );

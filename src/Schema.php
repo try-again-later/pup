@@ -88,7 +88,9 @@ class Schema
             ->next($this->setDefault(...))
             ->nextShortCircuit($this->validateRequired(...))
             ->nextShortCircuit($this->validateNullable(...))
-            ->nextShortCircuit($this->applyReplaceNullWithDefault(...));
+            ->nextShortCircuit($this->applyReplaceNullWithDefault(...))
+            ->nextShortCircuit($this->defaultCoercion(...))
+            ->next($this->applyUserDefinedTransforms(...));
     }
 
     protected function validateRequired(ValueWithErrors $withErrors): ValueWithErrors
@@ -141,5 +143,27 @@ class Schema
             return $withErrors->setValue($this->defaultValue);
         }
         return $withErrors;
+    }
+
+    protected function checkType(ValueWithErrors $withErrors): ValueWithErrors
+    {
+        // Do nothing by default
+        return $withErrors;
+    }
+
+    protected function coerceToType(ValueWithErrors $withErrors): ValueWithErrors
+    {
+        // Do nothing by default
+        return $withErrors;
+    }
+
+    protected function defaultCoercion(ValueWithErrors $withErrors): ValueWithErrors
+    {
+        if (!$this->allowCoercions) {
+            return $withErrors
+                ->next($this->checkType(...));
+        }
+        return $withErrors
+            ->next($this->coerceToType(...));
     }
 }
