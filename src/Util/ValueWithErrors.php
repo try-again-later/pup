@@ -179,14 +179,16 @@ class ValueWithErrors
         return $newValueWithErrors;
     }
 
-    public function mapValue(callable $valueMapping): self
+    public function mapValue(callable ...$valueMappings): self
     {
-        if ($this->stop) {
+        if ($this->stop || count($valueMappings) === 0) {
             return $this;
         }
 
         $newValueWithErrors = clone $this;
-        $newValueWithErrors->value = $valueMapping($this->value());
+        foreach ($valueMappings as $valueMapping) {
+            $newValueWithErrors->value = $valueMapping($newValueWithErrors->value());
+        }
         return $newValueWithErrors;
     }
 

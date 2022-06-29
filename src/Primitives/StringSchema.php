@@ -20,6 +20,7 @@ class StringSchema extends ScalarSchema
 
         return $withErrors
             ->nextShortCircuit($this->defaultCoercion(...))
+            ->next($this->applyUserDefinedTransforms(...))
             ->next($this->validateLength(...))
             ->next($this->validateMinLength(...))
             ->next($this->validateMaxLength(...));

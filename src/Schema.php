@@ -14,8 +14,11 @@ class Schema
 
     private mixed $defaultValue = null;
     private bool $hasDefault = false;
+    private bool $replaceNullWithDefault = false;
 
     protected bool $allowCoercions = false;
+
+    protected array $userDefinedTransforms = [];
 
     public static function string(): StringSchema
     {
@@ -55,6 +58,21 @@ class Schema
         return $newSchema;
     }
 
+    public function transform(callable $userDefinedTransform)
+    {
+        $newSchema = clone $this;
+        $newSchema->userDefinedTransforms =
+            [...$this->userDefinedTransforms, $userDefinedTransform];
+        return $newSchema;
+    }
+
+    public function replaceNullWithDefault()
+    {
+        $newSchema = clone $this;
+        $newSchema->replaceNullWithDefault = true;
+        return $newSchema;
+    }
+
     public function isValid(mixed $value = null): bool
     {
         return $this->validate($value, nothing: func_num_args() === 0)->hasValue();
@@ -69,7 +87,8 @@ class Schema
         return $withErrors
             ->next($this->setDefault(...))
             ->nextShortCircuit($this->validateRequired(...))
-            ->nextShortCircuit($this->validateNullable(...));
+            ->nextShortCircuit($this->validateNullable(...))
+            ->nextShortCircuit($this->applyReplaceNullWithDefault(...));
     }
 
     protected function validateRequired(ValueWithErrors $withErrors): ValueWithErrors
@@ -104,6 +123,23 @@ class Schema
             return $withErrors->setValue($this->defaultValue);
         }
 
+        return $withErrors;
+    }
+
+    protected function applyUserDefinedTransforms(ValueWithErrors $withErrors): ValueWithErrors
+    {
+        return $withErrors->mapValue(...$this->userDefinedTransforms);
+    }
+
+    protected function applyReplaceNullWithDefault(ValueWithErrors $withErrors): ValueWithErrors
+    {
+        if (!$this->replaceNullWithDefault || !$this->hasDefault) {
+            return $withErrors;
+        }
+
+        if (is_null($withErrors->value())) {
+            return $withErrors->setValue($this->defaultValue);
+        }
         return $withErrors;
     }
 }
