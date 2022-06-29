@@ -7,7 +7,7 @@ namespace TryAgainLater\Pup\Primitives;
 use TryAgainLater\Pup\Schema;
 use TryAgainLater\Pup\Util\ValueWithErrors;
 
-class ScalarSchema extends Schema
+abstract class ScalarSchema extends Schema
 {
     private ?array $allowedValues = null;
 

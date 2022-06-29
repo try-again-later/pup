@@ -9,7 +9,7 @@ use LogicException;
 use TryAgainLater\Pup\Primitives\String\StringSchema;
 use TryAgainLater\Pup\Util\ValueWithErrors;
 
-class Schema
+abstract class Schema
 {
     private bool $required = false;
     private bool $nullable = false;
@@ -20,6 +20,10 @@ class Schema
 
     private bool $allowCoercions = false;
     private array $userDefinedTransforms = [];
+
+    abstract protected function checkType(ValueWithErrors $withErrors): ValueWithErrors;
+
+    abstract protected function coerceToType(ValueWithErrors $withErrors): ValueWithErrors;
 
     public static function string(): StringSchema
     {
@@ -147,18 +151,13 @@ class Schema
         return $withErrors;
     }
 
-    protected function checkType(ValueWithErrors $withErrors): ValueWithErrors
-    {
-        throw new LogicException('Not implemented');
-    }
-
-    protected function coerceToType(ValueWithErrors $withErrors): ValueWithErrors
-    {
-        return $withErrors->pushError('Coercions are not supported.');
-    }
-
     protected function applyCoercions(ValueWithErrors $withErrors): ValueWithErrors
     {
+        // No coercions are needed if the type of the value is correct from the start
+        if (!$withErrors->dropErrors()->next($this->checkType(...))->hasErrors()) {
+            return $withErrors;
+        }
+
         if (!$this->allowCoercions) {
             return $withErrors
                 ->next($this->checkType(...));

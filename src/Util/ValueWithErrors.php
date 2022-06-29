@@ -189,6 +189,13 @@ class ValueWithErrors
         return $newValueWithErrors;
     }
 
+    public function dropErrors(): self
+    {
+        $newValueWithErrors = clone $this;
+        $newValueWithErrors->errors = [];
+        return $newValueWithErrors;
+    }
+
     public function mapValue(callable ...$valueMappings): self
     {
         if ($this->stop || count($valueMappings) === 0) {

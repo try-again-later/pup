@@ -3,14 +3,15 @@
 declare(strict_types = 1);
 
 use PHPUnit\Framework\TestCase;
-use TryAgainLater\Pup\Primitives\ScalarSchema;
+
+use TryAgainLater\Pup\Schema;
 
 class ScalarSchemaTest extends TestCase
 {
     public function test_OneOfDoesNotProduceError_WhenPassedAllowedValue()
     {
         $value = 'foo';
-        $schema = (new ScalarSchema)->oneOf('foo', 'bar', 'baz');
+        $schema = Schema::string()->oneOf('foo', 'bar', 'baz');
 
         $withErrors = $schema->validate($value);
 
@@ -20,7 +21,7 @@ class ScalarSchemaTest extends TestCase
     public function test_OneOfProducesError_WhenPassedForbiddenValue()
     {
         $value = 'something forbidden';
-        $schema = (new ScalarSchema)->oneOf('foo', 'bar', 'baz');
+        $schema = Schema::string()->oneOf('foo', 'bar', 'baz');
 
         $withErrors = $schema->validate($value);
 
