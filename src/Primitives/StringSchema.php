@@ -25,15 +25,6 @@ class StringSchema extends ScalarSchema
             ->next($this->validateMaxLength(...));
     }
 
-    private static function assertRequiredStringLength(int $stringLength): void
-    {
-        if ($stringLength < 0) {
-            throw new InvalidArgumentException(
-                "Requried string length cannot be a negative number (got '$stringLength')."
-            );
-        }
-    }
-
     public function length(int $length): static
     {
         self::assertRequiredStringLength($length);
@@ -65,29 +56,15 @@ class StringSchema extends ScalarSchema
     {
         return $withErrors->pushErrorIf(
             fn ($value) => !is_string($value) && !is_null($value),
-            'The value is not a string',
+            'The value is not a string.',
         );
     }
 
     protected function coerceToType(ValueWithErrors $withErrors): ValueWithErrors
     {
-        $fromBool = fn (ValueWithErrors $withErrors) =>
-            $withErrors->mapValueIf(
-                map: fn ($bool) => $bool ? 'true' : 'false',
-                if: is_bool(...),
-                error: 'The value is not a bool.',
-            );
-
-        $fromNumber = fn (ValueWithErrors $withErrors) =>
-            $withErrors->mapValueIf(
-                map: strval(...),
-                if: fn ($value) => is_int($value) || is_float($value),
-                error: 'The value is not a number.',
-            );
-
         return $withErrors->oneOf(
-            $fromBool,
-            $fromNumber,
+            self::fromBool(...),
+            self::fromNumber(...),
         );
     }
 
@@ -112,6 +89,33 @@ class StringSchema extends ScalarSchema
         return $withErrors->pushErrorIf(
             if: fn ($string) => isset($this->maxLength) && strlen($string) > $this->maxLength,
             error: "String is required to be at most '$this->maxLength' characters long.",
+        );
+    }
+
+    private static function assertRequiredStringLength(int $stringLength): void
+    {
+        if ($stringLength < 0) {
+            throw new InvalidArgumentException(
+                "Requried string length cannot be a negative number (got '$stringLength')."
+            );
+        }
+    }
+
+    private static function fromBool(ValueWithErrors $withErrors): ValueWithErrors
+    {
+        return $withErrors->mapValueIf(
+            map: fn ($bool) => $bool ? 'true' : 'false',
+            if: is_bool(...),
+            error: 'The value is not a bool.',
+        );
+    }
+
+    private static function fromNumber(ValueWithErrors $withErrors): ValueWithErrors
+    {
+        return $withErrors->mapValueIf(
+            map: strval(...),
+            if: fn ($value) => is_int($value) || is_float($value),
+            error: 'The value is not a number.',
         );
     }
 }
