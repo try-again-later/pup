@@ -2,12 +2,12 @@
 
 declare(strict_types = 1);
 
-namespace TryAgainLater\Pup\Primitives;
+namespace TryAgainLater\Pup\Scalar;
 
 use InvalidArgumentException;
 
 use TryAgainLater\Pup\Util\ValueWithErrors;
-use TryAgainLater\Pup\Primitives\ScalarSchema;
+use TryAgainLater\Pup\Scalar\ScalarSchema;
 
 class StringSchema extends ScalarSchema
 {

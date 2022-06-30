@@ -4,7 +4,7 @@ declare(strict_types = 1);
 
 namespace TryAgainLater\Pup;
 
-use TryAgainLater\Pup\Primitives\{FloatSchema, IntSchema, StringSchema};
+use TryAgainLater\Pup\Scalar\{FloatSchema, IntSchema, StringSchema};
 use TryAgainLater\Pup\Util\ValueWithErrors;
 
 abstract class Schema

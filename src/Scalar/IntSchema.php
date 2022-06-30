@@ -2,16 +2,16 @@
 
 declare(strict_types = 1);
 
-namespace TryAgainLater\Pup\Primitives;
+namespace TryAgainLater\Pup\Scalar;
 
 use TryAgainLater\Pup\Util\ValueWithErrors;
 
-class FloatSchema extends NumberSchema
+class IntSchema extends NumberSchema
 {
     protected function checkType(ValueWithErrors $withErrors): ValueWithErrors
     {
         return $withErrors->pushErrorIf(
-            fn ($value) => !is_float($value) && !is_null($value),
+            fn ($value) => !is_int($value) && !is_null($value),
             'The value is not an int.',
         );
     }
@@ -21,14 +21,14 @@ class FloatSchema extends NumberSchema
         return $withErrors->oneOf(
             self::fromBool(...),
             self::fromString(...),
-            self::fromInt(...),
+            self::fromFloat(...),
         );
     }
 
     private static function fromBool(ValueWithErrors $withErrors): ValueWithErrors
     {
         return $withErrors->mapValueIf(
-            map: fn ($bool) => $bool ? 1.0 : 0.0,
+            map: fn ($bool) => $bool ? 1 : 0,
             if: is_bool(...),
             error: 'The value is not a bool',
         );
@@ -37,17 +37,17 @@ class FloatSchema extends NumberSchema
     private static function fromString(ValueWithErrors $withErrors): ValueWithErrors
     {
         return $withErrors->mapValueIf(
-            map: floatval(...),
+            map: intval(...),
             if: is_string(...),
             error: 'The value is not a string.',
         );
     }
 
-    private static function fromInt(ValueWithErrors $withErrors): ValueWithErrors
+    private static function fromFloat(ValueWithErrors $withErrors): ValueWithErrors
     {
         return $withErrors->mapValueIf(
-            map: floatval(...),
-            if: is_int(...),
+            map: intval(...),
+            if: is_float(...),
             error: 'The value is not a float.',
         );
     }
