@@ -90,17 +90,21 @@ class ValueWithErrors
         return $this->errors;
     }
 
-    public function next(callable $check): self
+    public function next(callable ...$checks): self
     {
         if ($this->stop) {
             return $this;
         }
 
-        $nextValueWithErrors = $check($this);
-        if (!isset($nextValueWithErrors) || !($nextValueWithErrors instanceof self)) {
-            return $this;
+        $currentValueWithErrors = $this;
+        foreach ($checks as $check) {
+            $nextValueWithErrors = $check($currentValueWithErrors);
+            if (!isset($nextValueWithErrors) || !($nextValueWithErrors instanceof self)) {
+                continue;
+            }
+            $currentValueWithErrors = $nextValueWithErrors;
         }
-        return $nextValueWithErrors;
+        return $currentValueWithErrors;
     }
 
     public function nextShortCircuit(callable $check): self
@@ -159,7 +163,7 @@ class ValueWithErrors
         return $nextValueWithErrors;
     }
 
-    public function catchAndStop(?callable $onError = null)
+    public function catchAndStop(?callable $onError = null): self
     {
         if (!$this->hasErrors() || $this->stop) {
             return $this;
@@ -172,13 +176,20 @@ class ValueWithErrors
         return $newValueWithErrors;
     }
 
-    public function stopIfValueIs(?callable $valuePredicate)
+    public function stopIfValueIs(?callable $valuePredicate): self
     {
         if ($this->stop) {
             return $this;
         }
         $newValueWithErrors = clone $this;
         $newValueWithErrors->stop = boolval($valuePredicate($this->value()));
+        return $newValueWithErrors;
+    }
+
+    public function stop(): self
+    {
+        $newValueWithErrors = clone $this;
+        $newValueWithErrors->stop = true;
         return $newValueWithErrors;
     }
 

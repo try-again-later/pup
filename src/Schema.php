@@ -38,6 +38,11 @@ abstract class Schema
         return new FloatSchema;
     }
 
+    public static function associativeArray(array $shape)
+    {
+        return new AssociativeArraySchema($shape);
+    }
+
     public function required(): static
     {
         $newSchema = clone $this;
@@ -112,7 +117,10 @@ abstract class Schema
         if ($this->required && !$withErrors->hasValue()) {
             return $withErrors->pushError('Value is required.');
         }
-
+        if (!$withErrors->hasValue()) {
+            // Skip all subsequent checks
+            return $withErrors->stop();
+        }
         return $withErrors;
     }
 
