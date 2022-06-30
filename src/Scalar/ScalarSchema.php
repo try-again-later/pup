@@ -33,7 +33,7 @@ abstract class ScalarSchema extends Schema
         }
         if (!in_array($withErrors->value(), $this->allowedValues, strict: true)) {
             $allowedValuesString = implode(', ', $this->allowedValues);
-            return $withErrors->pushError(
+            return $withErrors->pushErrors(
                 "Only these scalar values are allowed: $allowedValuesString"
             );
         }

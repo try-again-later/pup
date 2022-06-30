@@ -7,21 +7,23 @@ namespace TryAgainLater\Pup\Util;
 use LogicException;
 
 /**
+ * An immutable wrapper for a value and errors associated with it.
+ *
  * Useful when you want to make a series of independent tests for the value and collect every single
  * error instead of short-circuiting after the first one. Then you would do something like:
  *
  * ```php
  * $isInt =
- *     fn ($value) => is_int($value->value()) ?: $value->pushError('Expected an int.');
+ *     fn ($value) => is_int($value->value()) ?: $value->pushErrors('Expected an int.');
  *
  * $isNotNegative =
- *     fn($value) => $value->value() >= 0 ?: $value->pushError('Expected a non negative int.');
+ *     fn($value) => $value->value() >= 0 ?: $value->pushErrors('Expected a non negative int.');
  *
  * $lessThan65536 =
- *     fn($value) => $value->value() < 65536 ?: $value->pushError('Expected <= 65535');
+ *     fn ($value) => $value->value() < 65536 ?: $value->pushErrors('Expected <= 65535');
  *
  * $toString =
- *     fn($value) => "PORT=$value";
+ *     fn ($value) => "PORT=$value";
  *
  * $value = ValueWithErrors::makeValue(12345)
  *     ->next($isInt)
@@ -42,10 +44,13 @@ class ValueWithErrors
         );
     }
 
-    public static function makeError(mixed $error): self
+    /**
+     * Create an error without value. Use `setValue` to set the value.
+     */
+    public static function makeError(mixed ...$errors): self
     {
         return new self(
-            errors: [$error],
+            errors: $errors,
         );
     }
 
@@ -55,7 +60,7 @@ class ValueWithErrors
     }
 
     public function __construct(
-        private mixed $errors = [],
+        private array $errors = [],
         private mixed $value = null,
         private bool $hasValue = false,
         private bool $stop = false,
@@ -74,7 +79,12 @@ class ValueWithErrors
 
     public function get(): array
     {
-        return [$this->value, $this->errors];
+        return [$this->value(), $this->errors()];
+    }
+
+    public function tryGet(): array
+    {
+        return [$this->hasValue() ? $this->value() : null, $this->errors()];
     }
 
     public function value(): mixed
@@ -90,9 +100,12 @@ class ValueWithErrors
         return $this->errors;
     }
 
+    /**
+     * Successively apply all of the callables to `ValueWithErrors`.
+     */
     public function next(callable ...$checks): self
     {
-        if ($this->stop) {
+        if ($this->stop || count($checks) === 0) {
             return $this;
         }
 
@@ -107,19 +120,27 @@ class ValueWithErrors
         return $currentValueWithErrors;
     }
 
-    public function nextShortCircuit(callable $check): self
+    /**
+     * If the callback produces any __new__ errors, then any successive operations will be ignored.
+     */
+    public function shortCircuit(callable $callback): self
     {
-        $nextValueWithErrors = $this->next($check);
+        if ($this->stop) {
+            return $this;
+        }
+
+        $nextValueWithErrors = $callback($this);
 
         if (count($nextValueWithErrors->errors()) > count($this->errors())) {
-            return $nextValueWithErrors->catchAndStop();
+            return $nextValueWithErrors->stop();
         }
 
         return $nextValueWithErrors;
     }
 
     /**
-     * Peeks the callable which produces the least amount of errors.
+     * Peeks the callable which produces the least amount of errors and returns the result of
+     * applying it to `ValueWithErrors`.
      */
     public function oneOf(callable ...$checks): self
     {
@@ -152,75 +173,81 @@ class ValueWithErrors
         return $withMinErrors;
     }
 
-    public function oneOfShortCircuit(callable ...$checks): self
-    {
-        $nextValueWithErrors = $this->oneOf(...$checks);
-
-        if (count($nextValueWithErrors->errors()) > count($this->errors())) {
-            return $nextValueWithErrors->catchAndStop();
-        }
-
-        return $nextValueWithErrors;
-    }
-
-    public function catchAndStop(?callable $onError = null): self
-    {
-        if (!$this->hasErrors() || $this->stop) {
-            return $this;
-        }
-        $newValueWithErrors = clone $this;
-        $newValueWithErrors->stop = true;
-        if (isset($onError)) {
-            $onError($newValueWithErrors);
-        }
-        return $newValueWithErrors;
-    }
-
-    public function stopIfValueIs(?callable $valuePredicate): self
-    {
-        if ($this->stop) {
-            return $this;
-        }
-        $newValueWithErrors = clone $this;
-        $newValueWithErrors->stop = boolval($valuePredicate($this->value()));
-        return $newValueWithErrors;
-    }
-
+    /**
+     * Same as `stopIfValue`, but unconditionally.
+     */
     public function stop(): self
     {
+        if ($this->stop) {
+            return $this;
+        }
+
         $newValueWithErrors = clone $this;
         $newValueWithErrors->stop = true;
         return $newValueWithErrors;
     }
 
-    public function pushError(mixed $error): self
+    /**
+     * If there are any errors, ignore any successive operations.
+     */
+    public function catchAndStop(?callable $catch = null): self
     {
-        $newValueWithErrors = clone $this;
-        $newValueWithErrors->errors = [...$this->errors, $error];
-        return $newValueWithErrors;
-    }
-
-    public function pushErrorIf(
-        callable $if,
-        callable | string $error,
-    ): self {
-        if ($this->stop) {
-            return $this;
-        }
-
-        if ($if($this->value())) {
-            $error = match (is_callable($error)) {
-                true => $error($this->value()),
-                false => $error,
-            };
-
-            return $this->pushError($error);
+        if ($this->hasErrors()) {
+            if (isset($catch)) {
+                return $catch($this->stop());
+            }
+            return $this->stop();
         }
         return $this;
     }
 
+    /**
+     * Ignore any successive operations if the current value satisfies the given predicate.
+     */
+    public function stopIfValue(?callable $valuePredicate): self
+    {
+        if ($valuePredicate($this->value())) {
+            return $this->stop();
+        }
+        return $this;
+    }
+
+    public function pushErrors(mixed ...$errors): self
+    {
+        if ($this->stop || count($errors) === 0) {
+            return $this;
+        }
+
+        $newValueWithErrors = clone $this;
+        $newValueWithErrors->errors = [...$this->errors, ...$errors];
+        return $newValueWithErrors;
+    }
+
+    public function pushErrorsIfValue(callable $if, mixed ...$errors): self {
+        if ($this->stop || count($errors) === 0) {
+            return $this;
+        }
+
+        if ($if($this->value())) {
+            $evaluatedErrors = array_map(
+                fn ($error) => is_callable($error) ? $error($this->value()) : $error,
+                $errors,
+            );
+
+            return $this->pushErrors(...$evaluatedErrors);
+        }
+        return $this;
+    }
+
+    /**
+     * Removes all errors.
+     */
     public function dropErrors(): self
     {
+        if ($this->stop) {
+            return $this;
+        }
+
         $newValueWithErrors = clone $this;
         $newValueWithErrors->errors = [];
         return $newValueWithErrors;
@@ -239,6 +266,9 @@ class ValueWithErrors
         return $newValueWithErrors;
     }
 
+    /**
+     * If the predicate is false, pushes the error.
+     */
     public function mapValueIf(
         callable $map,
         callable $if,
@@ -255,7 +285,7 @@ class ValueWithErrors
                 false => $error,
             };
 
-            return $this->pushError($error);
+            return $this->pushErrors($error);
         }
         return $this->mapValue($map);
     }

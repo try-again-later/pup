@@ -104,18 +104,26 @@ abstract class Schema
 
         return $withErrors
             ->next($this->applyDefault(...))
-            ->nextShortCircuit($this->validateRequired(...))
-            ->nextShortCircuit($this->validateNullable(...))
-            ->nextShortCircuit($this->applyReplaceNullWithDefault(...))
-            ->nextShortCircuit($this->applyCoercions(...))
+            ->shortCircuit(
+                fn ($v) => $v->next($this->validateRequired(...))
+            )
+            ->shortCircuit(
+                fn ($v) => $v->next($this->validateNullable(...))
+            )
+            ->shortCircuit(
+                fn ($v) => $v->next($this->applyReplaceNullWithDefault(...))
+            )
+            ->shortCircuit(
+                fn ($v) => $v->next($this->applyCoercions(...))
+            )
             ->next($this->applyUserDefinedTransforms(...))
-            ->stopIfValueIs(fn ($value) => is_null($value));
+            ->stopIfValue(fn ($value) => is_null($value));
     }
 
     protected function validateRequired(ValueWithErrors $withErrors): ValueWithErrors
     {
         if ($this->required && !$withErrors->hasValue()) {
-            return $withErrors->pushError('Value is required.');
+            return $withErrors->pushErrors('Value is required.');
         }
         if (!$withErrors->hasValue()) {
             // Skip all subsequent checks
@@ -131,7 +139,7 @@ abstract class Schema
         }
 
         if (is_null($withErrors->value())) {
-            return $withErrors->pushError('Value cannot be null.');
+            return $withErrors->pushErrors('Value cannot be null.');
         }
 
         return $withErrors;

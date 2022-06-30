@@ -21,7 +21,7 @@ class AssociativeArraySchema extends Schema
 
     protected function checkType(ValueWithErrors $withErrors): ValueWithErrors
     {
-        return $withErrors->pushErrorIf(
+        return $withErrors->pushErrorsIfValue(
             if: fn ($value) => !is_array($value),
             error: 'The values is not an array',
         );
@@ -29,7 +29,7 @@ class AssociativeArraySchema extends Schema
 
     protected function coerceToType(ValueWithErrors $withErrors): ValueWithErrors
     {
-        return $withErrors->pushError('No coercions are available.');
+        return $withErrors->pushErrors('No coercions are available.');
     }
 
     protected function validateAllKeysArePresent(ValueWithErrors $withErrors): ValueWithErrors
@@ -46,7 +46,7 @@ class AssociativeArraySchema extends Schema
             }
 
             foreach ($memberWithErrors->errors() as $error) {
-                $withErrors = $withErrors->pushError([$key, $error]);
+                $withErrors = $withErrors->pushErrors([$key, $error]);
             }
 
             // apply any transforms / default values

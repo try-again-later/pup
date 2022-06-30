@@ -54,7 +54,7 @@ class StringSchema extends ScalarSchema
 
     protected function checkType(ValueWithErrors $withErrors): ValueWithErrors
     {
-        return $withErrors->pushErrorIf(
+        return $withErrors->pushErrorsIfValue(
             fn ($value) => !is_string($value) && !is_null($value),
             'The value is not a string.',
         );
@@ -70,7 +70,7 @@ class StringSchema extends ScalarSchema
 
     protected function validateExactLength(ValueWithErrors $withErrors): ValueWithErrors
     {
-        return $withErrors->pushErrorIf(
+        return $withErrors->pushErrorsIfValue(
             if: fn ($string) => isset($this->exactLength) && strlen($string) !== $this->exactLength,
             error: "String is required to have length '$this->exactLength'",
         );
@@ -78,7 +78,7 @@ class StringSchema extends ScalarSchema
 
     protected function validateMinLength(ValueWithErrors $withErrors): ValueWithErrors
     {
-        return $withErrors->pushErrorIf(
+        return $withErrors->pushErrorsIfValue(
             if: fn ($string) => isset($this->minLength) && strlen($string) < $this->minLength,
             error: "String is required to be at least '$this->minLength' characters long.",
         );
@@ -86,7 +86,7 @@ class StringSchema extends ScalarSchema
 
     protected function validateMaxLength(ValueWithErrors $withErrors): ValueWithErrors
     {
-        return $withErrors->pushErrorIf(
+        return $withErrors->pushErrorsIfValue(
             if: fn ($string) => isset($this->maxLength) && strlen($string) > $this->maxLength,
             error: "String is required to be at most '$this->maxLength' characters long.",
         );

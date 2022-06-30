@@ -76,7 +76,7 @@ abstract class NumberSchema extends ScalarSchema
             ($this->minIsReachable ? 'or equal to ' : '') .
             "$this->min.";
 
-        return $withErrors->pushErrorIf(
+        return $withErrors->pushErrorsIfValue(
             if: fn ($number) =>
                 isset($this->min) &&
                 ($number < $this->min || $number === $this->min && !$this->minIsReachable),
@@ -91,7 +91,7 @@ abstract class NumberSchema extends ScalarSchema
             ($this->maxIsReachable ? 'or equal to ' : '') .
             "$this->max.";
 
-        return $withErrors->pushErrorIf(
+        return $withErrors->pushErrorsIfValue(
             if: fn ($number) =>
                 isset($this->max) &&
                 ($number > $this->max || $number === $this->max && !$this->maxIsReachable),

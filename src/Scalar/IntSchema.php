@@ -10,7 +10,7 @@ class IntSchema extends NumberSchema
 {
     protected function checkType(ValueWithErrors $withErrors): ValueWithErrors
     {
-        return $withErrors->pushErrorIf(
+        return $withErrors->pushErrorsIfValue(
             fn ($value) => !is_int($value) && !is_null($value),
             'The value is not an int.',
         );
