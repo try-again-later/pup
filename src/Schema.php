@@ -4,6 +4,7 @@ declare(strict_types = 1);
 
 namespace TryAgainLater\Pup;
 
+use TryAgainLater\Pup\Rules\SchemaRules;
 use TryAgainLater\Pup\Scalar\{FloatSchema, IntSchema, StringSchema};
 use TryAgainLater\Pup\Util\ValueWithErrors;
 
@@ -23,24 +24,27 @@ abstract class Schema
 
     abstract protected function coerceToType(ValueWithErrors $withErrors): ValueWithErrors;
 
-    public static function string(): StringSchema
+    public function validate(mixed $value = null, bool $nothing = false): ValueWithErrors
     {
-        return new StringSchema;
-    }
+        $withErrors = func_num_args() === 0 || $nothing
+            ? ValueWithErrors::makeNothing()
+            : ValueWithErrors::makeValue($value);
 
-    public static function int(): IntSchema
-    {
-        return new IntSchema;
-    }
+        return $withErrors
+            ->nextIf($this->hasDefault, SchemaRules::default($this->defaultValue))
+            ->nextIf($this->required, SchemaRules::required(...))
+            ->stopIf(fn ($v) => !$v->hasValue())
 
-    public static function float(): FloatSchema
-    {
-        return new FloatSchema;
-    }
+            ->nextIf(!$this->nullable, SchemaRules::notNullable(...))
+            ->nextIf(
+                $this->replaceNullWithDefault && $this->hasDefault,
+                SchemaRules::replaceNullWithDefault($this->defaultValue),
+            )
+            ->nextIf($this->allowCoercions, $this->coerceToType(...))
+            ->shortCircuit(fn ($v) => $v->next($this->checkType(...)))
 
-    public static function associativeArray(array $shape)
-    {
-        return new AssociativeArraySchema($shape);
+            ->next(fn ($v) => $v->mapValue(...$this->userDefinedTransforms))
+            ->stopIfValue(fn ($v) => is_null($v));
     }
 
     public function required(): static
@@ -96,97 +100,23 @@ abstract class Schema
         return $this->validate($value, nothing: func_num_args() === 0)->hasValue();
     }
 
-    public function validate(mixed $value = null, bool $nothing = false): ValueWithErrors
+    public static function string(): StringSchema
     {
-        $withErrors = func_num_args() === 0 || $nothing
-            ? ValueWithErrors::makeNothing()
-            : ValueWithErrors::makeValue($value);
-
-        return $withErrors
-            ->next($this->applyDefault(...))
-            ->shortCircuit(
-                fn ($v) => $v->next($this->validateRequired(...))
-            )
-            ->shortCircuit(
-                fn ($v) => $v->next($this->validateNullable(...))
-            )
-            ->shortCircuit(
-                fn ($v) => $v->next($this->applyReplaceNullWithDefault(...))
-            )
-            ->shortCircuit(
-                fn ($v) => $v->next($this->applyCoercions(...))
-            )
-            ->next($this->applyUserDefinedTransforms(...))
-            ->stopIfValue(fn ($value) => is_null($value));
+        return new StringSchema;
     }
 
-    protected function validateRequired(ValueWithErrors $withErrors): ValueWithErrors
+    public static function int(): IntSchema
     {
-        if ($this->required && !$withErrors->hasValue()) {
-            return $withErrors->pushErrors('Value is required.');
-        }
-        if (!$withErrors->hasValue()) {
-            // Skip all subsequent checks
-            return $withErrors->stop();
-        }
-        return $withErrors;
+        return new IntSchema;
     }
 
-    protected function validateNullable(ValueWithErrors $withErrors): ValueWithErrors
+    public static function float(): FloatSchema
     {
-        if (!$withErrors->hasValue() || $this->nullable) {
-            return $withErrors;
-        }
-
-        if (is_null($withErrors->value())) {
-            return $withErrors->pushErrors('Value cannot be null.');
-        }
-
-        return $withErrors;
+        return new FloatSchema;
     }
 
-    protected function applyDefault(ValueWithErrors $withErrors): ValueWithErrors
+    public static function associativeArray(array $shape)
     {
-        if (!$this->hasDefault) {
-            return $withErrors;
-        }
-
-        if (!$withErrors->hasValue()) {
-            return $withErrors->setValue($this->defaultValue);
-        }
-
-        return $withErrors;
-    }
-
-    protected function applyUserDefinedTransforms(ValueWithErrors $withErrors): ValueWithErrors
-    {
-        return $withErrors->mapValue(...$this->userDefinedTransforms);
-    }
-
-    protected function applyReplaceNullWithDefault(ValueWithErrors $withErrors): ValueWithErrors
-    {
-        if (!$this->replaceNullWithDefault || !$this->hasDefault) {
-            return $withErrors;
-        }
-
-        if (is_null($withErrors->value())) {
-            return $withErrors->setValue($this->defaultValue);
-        }
-        return $withErrors;
-    }
-
-    protected function applyCoercions(ValueWithErrors $withErrors): ValueWithErrors
-    {
-        // No coercions are needed if the type of the value is correct from the start
-        if (!$withErrors->dropErrors()->next($this->checkType(...))->hasErrors()) {
-            return $withErrors;
-        }
-
-        if (!$this->allowCoercions) {
-            return $withErrors
-                ->next($this->checkType(...));
-        }
-        return $withErrors
-            ->next($this->coerceToType(...));
+        return new AssociativeArraySchema($shape);
     }
 }

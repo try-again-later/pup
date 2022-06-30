@@ -62,7 +62,7 @@ class StringSchema extends ScalarSchema
 
     protected function coerceToType(ValueWithErrors $withErrors): ValueWithErrors
     {
-        return $withErrors->oneOf(
+        return $withErrors->tryOneOf(
             self::fromBool(...),
             self::fromNumber(...),
         );

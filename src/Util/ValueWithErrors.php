@@ -100,6 +100,19 @@ class ValueWithErrors
         return $this->errors;
     }
 
+    public function if(callable | bool $condition, callable $callback): self
+    {
+        if ($this->stop) {
+            return $this;
+        }
+
+        if (is_bool($condition) && $condition || is_callable($condition) && $condition($this)) {
+            return $callback($this);
+        }
+
+        return $this;
+    }
+
     /**
      * Successively apply all of the callables to `ValueWithErrors`.
      */
@@ -118,6 +131,18 @@ class ValueWithErrors
             $currentValueWithErrors = $nextValueWithErrors;
         }
         return $currentValueWithErrors;
+    }
+
+    public function nextIf(callable | bool $condition, callable ...$checks): self
+    {
+        if ($this->stop || count($checks) === 0) {
+            return $this;
+        }
+
+        return $this->if(
+            $condition,
+            fn (ValueWithErrors $v) => $v->next(...$checks),
+        );
     }
 
     /**
@@ -173,6 +198,19 @@ class ValueWithErrors
         return $withMinErrors;
     }
 
+    public function tryOneOf(callable ...$checks): self
+    {
+        if ($this->stop || count($checks) === 0) {
+            return $this;
+        }
+
+        $candidate = $this->oneOf(...$checks);
+        if (count($this->errors()) > count($candidate->errors())) {
+            return $this;
+        }
+        return $candidate;
+    }
+
     /**
      * Same as `stopIfValue`, but unconditionally.
      */
@@ -192,6 +230,10 @@ class ValueWithErrors
      */
     public function catchAndStop(?callable $catch = null): self
     {
+        if ($this->stop) {
+            return $this;
+        }
+
         if ($this->hasErrors()) {
             if (isset($catch)) {
                 return $catch($this->stop());
@@ -204,9 +246,25 @@ class ValueWithErrors
     /**
      * Ignore any successive operations if the current value satisfies the given predicate.
      */
-    public function stopIfValue(?callable $valuePredicate): self
+    public function stopIfValue(callable $valuePredicate): self
     {
+        if ($this->stop) {
+            return $this;
+        }
+
         if ($valuePredicate($this->value())) {
+            return $this->stop();
+        }
+        return $this;
+    }
+
+    public function stopIf(callable | bool $condition): self
+    {
+        if ($this->stop) {
+            return $this;
+        }
+
+        if (is_bool($condition) && $condition || is_callable($condition) && $condition($this)) {
             return $this->stop();
         }
         return $this;

@@ -18,7 +18,7 @@ class FloatSchema extends NumberSchema
 
     protected function coerceToType(ValueWithErrors $withErrors): ValueWithErrors
     {
-        return $withErrors->oneOf(
+        return $withErrors->tryOneOf(
             self::fromBool(...),
             self::fromString(...),
             self::fromInt(...),
