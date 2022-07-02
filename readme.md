@@ -33,3 +33,38 @@ $user = [
 // ]
 [$validatedUser, $errors] = $userSchema->validate($user)->get();
 ```
+
+You can also use attributes on existing class:
+
+```php
+use TryAgainLater\Pup\Attributes\FromAssociativeArray;
+use TryAgainLater\Pup\Attributes\Generic\{ParsedProperty, Required, Transform};
+
+#[FromAssociativeArray]
+class User
+{
+    public static function transformName(string $name): string
+    {
+        return "NAME = $name";
+    }
+
+    #[ParsedProperty]
+    #[Required, Transform([self::class, 'transformName'])]
+    private string $name;
+
+    #[ParsedProperty]
+    private string $website = 'No website';
+}
+
+$rawUser = [
+    'name' => 'John',
+];
+
+// User Object
+// (
+//   [name:User:private] => 'NAME = John'
+//   [website:User:private] => 'No website'
+// )
+
+$user = FromAssociativeArray::instance(User::class, $rawUser);
+```
