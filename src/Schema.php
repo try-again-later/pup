@@ -4,8 +4,6 @@ declare(strict_types = 1);
 
 namespace TryAgainLater\Pup;
 
-use LogicException;
-
 use TryAgainLater\Pup\Rules\SchemaRules;
 use TryAgainLater\Pup\Scalar\{FloatSchema, IntSchema, StringSchema};
 use TryAgainLater\Pup\Util\ValueWithErrors;
@@ -25,10 +23,24 @@ abstract class Schema
     private $checkType;
     private $coerceToType;
 
-    public function __construct(callable $checkType, ?callable $coerceToType = null)
+    public function __construct(
+        callable $checkType,
+        SchemaParameters $schemaParameters = new SchemaParameters(),
+        ?callable $coerceToType = null,
+    )
     {
+        $this->required = $schemaParameters->required;
+        $this->nullable = $schemaParameters->nullable;
+        $this->defaultValue = $schemaParameters->defaultValue;
+        $this->hasDefault = $schemaParameters->hasDefault;
+        $this->replaceNullWithDefault = $schemaParameters->replaceNullWithDefault;
+        $this->allowCoercions = $schemaParameters->allowCoercions;
+        $this->userDefinedTransforms = $schemaParameters->userDefinedTransforms;
         $this->checkType = $checkType;
-        $this->coerceToType = $coerceToType;
+
+        if (isset($coerceToType)) {
+            $this->coerceToType = $coerceToType;
+        }
     }
 
     public function validate(mixed $value = null, bool $nothing = false): ValueWithErrors
@@ -124,23 +136,35 @@ abstract class Schema
         return $this->validate($value, nothing: func_num_args() === 0)->hasValue();
     }
 
-    public static function string(): StringSchema
+    public static function string(
+        SchemaParameters $schemaParameters = new SchemaParameters()
+    ): StringSchema
     {
-        return new StringSchema;
+        return new StringSchema($schemaParameters);
     }
 
-    public static function int(): IntSchema
+    public static function int(
+        SchemaParameters $schemaParameters = new SchemaParameters()
+    ): IntSchema
     {
-        return new IntSchema;
+        return new IntSchema($schemaParameters);
     }
 
-    public static function float(): FloatSchema
+    public static function float(
+        SchemaParameters $schemaParameters = new SchemaParameters()
+    ): FloatSchema
     {
-        return new FloatSchema;
+        return new FloatSchema($schemaParameters);
     }
 
-    public static function associativeArray(array $shape)
+    public static function associativeArray(
+        array $shape,
+        SchemaParameters $schemaParameters = new SchemaParameters(),
+    ): AssociativeArraySchema
     {
-        return new AssociativeArraySchema($shape);
+        return new AssociativeArraySchema(
+            shape: $shape,
+            schemaParameters: $schemaParameters,
+        );
     }
 }

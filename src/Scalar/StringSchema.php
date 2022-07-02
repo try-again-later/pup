@@ -9,6 +9,7 @@ use InvalidArgumentException;
 use TryAgainLater\Pup\Rules\StringRules;
 use TryAgainLater\Pup\Util\ValueWithErrors;
 use TryAgainLater\Pup\Scalar\ScalarSchema;
+use TryAgainLater\Pup\SchemaParameters;
 
 class StringSchema extends ScalarSchema
 {
@@ -16,9 +17,13 @@ class StringSchema extends ScalarSchema
     private ?int $minLength = null;
     private ?int $maxLength = null;
 
-    public function __construct()
+    public function __construct(SchemaParameters $schemaParameters = new SchemaParameters())
     {
-        parent::__construct(StringRules::checkType(), StringRules::coerceToType());
+        parent::__construct(
+            checkType: StringRules::checkType(),
+            coerceToType: StringRules::coerceToType(),
+            schemaParameters: $schemaParameters,
+        );
     }
 
     public function validate(mixed $value = null, bool $nothing = false): ValueWithErrors

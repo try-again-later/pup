@@ -17,4 +17,36 @@ class AssociativeArrayRules
             );
         };
     }
+
+    public static function validateShape(array $shape): callable
+    {
+        return static function (ValueWithErrors $arrayWithErrors) use ($shape) {
+            $arrayToValidate = $arrayWithErrors->value();
+
+            foreach ($shape as $shapeKey => $shapeScheme) {
+                if (array_key_exists($shapeKey, $arrayToValidate)) {
+                    $memberWithErrors = $shapeScheme->validate($arrayToValidate[$shapeKey]);
+                } else {
+                    $memberWithErrors = $shapeScheme->validate();
+                }
+
+                $arrayWithErrors = $arrayWithErrors->pushErrors(...array_map(
+                    fn ($error) => [$shapeKey, $error],
+                    $memberWithErrors->errors(),
+                ));
+
+                // apply any transforms / default values
+                if ($memberWithErrors->hasValue()) {
+                    $arrayWithErrors = $arrayWithErrors->mapValue(
+                        fn ($array) => [
+                            ...$array,
+                            $shapeKey => $memberWithErrors->value(),
+                        ]
+                    );
+                }
+            }
+
+            return $arrayWithErrors;
+        };
+    }
 }
