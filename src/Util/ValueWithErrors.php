@@ -237,24 +237,6 @@ class ValueWithErrors
     }
 
     /**
-     * If there are any errors, ignore any successive operations.
-     */
-    public function catchAndStop(?callable $catch = null): self
-    {
-        if ($this->stop) {
-            return $this;
-        }
-
-        if ($this->hasErrors()) {
-            if (isset($catch)) {
-                return $catch($this->stop());
-            }
-            return $this->stop();
-        }
-        return $this;
-    }
-
-    /**
      * Ignore any successive operations if the current value satisfies the given predicate.
      */
     public function stopIfValue(callable $valuePredicate): self

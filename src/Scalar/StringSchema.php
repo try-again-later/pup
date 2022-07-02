@@ -6,6 +6,7 @@ namespace TryAgainLater\Pup\Scalar;
 
 use InvalidArgumentException;
 
+use TryAgainLater\Pup\Rules\StringRules;
 use TryAgainLater\Pup\Util\ValueWithErrors;
 use TryAgainLater\Pup\Scalar\ScalarSchema;
 
@@ -20,9 +21,38 @@ class StringSchema extends ScalarSchema
         $withErrors = parent::validate($value, nothing: func_num_args() === 0 || $nothing);
 
         return $withErrors
-            ->next($this->validateExactLength(...))
-            ->next($this->validateMinLength(...))
-            ->next($this->validateMaxLength(...));
+            ->next(StringRules::exactLength(
+                enabled: isset($this->exactLength),
+                length: $this->exactLength ?? 0,
+            ))
+            ->next(StringRules::minLength(
+                enabled: isset($this->minLength),
+                length: $this->minLength ?? 0,
+            ))
+            ->next(StringRules::maxLength(
+                enabled: isset($this->maxLength),
+                length: $this->maxLength ?? 0,
+            ));
+    }
+
+    public static function checkType(): callable
+    {
+        return static function (ValueWithErrors $withErrors) {
+            return $withErrors->pushErrorsIfValue(
+                fn ($value) => !is_string($value) && !is_null($value),
+                'The value is not a string.',
+            );
+        };
+    }
+
+    public static function coerceToType(): callable
+    {
+        return static function (ValueWithErrors $withErrors) {
+            return $withErrors->tryOneOf(
+                StringRules::fromBool(),
+                StringRules::fromNumber(),
+            );
+        };
     }
 
     public function length(int $length): static
@@ -52,50 +82,6 @@ class StringSchema extends ScalarSchema
         return $newSchema;
     }
 
-    public static function checkType(): callable
-    {
-        return static function (ValueWithErrors $withErrors) {
-            return $withErrors->pushErrorsIfValue(
-                fn ($value) => !is_string($value) && !is_null($value),
-                'The value is not a string.',
-            );
-        };
-    }
-
-    public static function coerceToType(): callable
-    {
-        return static function (ValueWithErrors $withErrors) {
-            return $withErrors->tryOneOf(
-                self::fromBool(...),
-                self::fromNumber(...),
-            );
-        };
-    }
-
-    protected function validateExactLength(ValueWithErrors $withErrors): ValueWithErrors
-    {
-        return $withErrors->pushErrorsIfValue(
-            if: fn ($string) => isset($this->exactLength) && strlen($string) !== $this->exactLength,
-            error: "String is required to have length '$this->exactLength'",
-        );
-    }
-
-    protected function validateMinLength(ValueWithErrors $withErrors): ValueWithErrors
-    {
-        return $withErrors->pushErrorsIfValue(
-            if: fn ($string) => isset($this->minLength) && strlen($string) < $this->minLength,
-            error: "String is required to be at least '$this->minLength' characters long.",
-        );
-    }
-
-    protected function validateMaxLength(ValueWithErrors $withErrors): ValueWithErrors
-    {
-        return $withErrors->pushErrorsIfValue(
-            if: fn ($string) => isset($this->maxLength) && strlen($string) > $this->maxLength,
-            error: "String is required to be at most '$this->maxLength' characters long.",
-        );
-    }
-
     private static function assertRequiredStringLength(int $stringLength): void
     {
         if ($stringLength < 0) {
@@ -103,23 +89,5 @@ class StringSchema extends ScalarSchema
                 "Requried string length cannot be a negative number (got '$stringLength')."
             );
         }
-    }
-
-    private static function fromBool(ValueWithErrors $withErrors): ValueWithErrors
-    {
-        return $withErrors->mapValueIf(
-            map: fn ($bool) => $bool ? 'true' : 'false',
-            if: is_bool(...),
-            error: 'The value is not a bool.',
-        );
-    }
-
-    private static function fromNumber(ValueWithErrors $withErrors): ValueWithErrors
-    {
-        return $withErrors->mapValueIf(
-            map: strval(...),
-            if: fn ($value) => is_int($value) || is_float($value),
-            error: 'The value is not a number.',
-        );
     }
 }

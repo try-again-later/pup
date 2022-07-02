@@ -31,6 +31,8 @@ abstract class Schema
         return $withErrors
             ->next(SchemaRules::default(enabled: $this->hasDefault, value: $this->defaultValue))
             ->next(SchemaRules::required(enabled: $this->required))
+
+            // Quit early
             ->stopIf(fn (ValueWithErrors $v) => !$v->hasValue())
 
             ->next(SchemaRules::nullable(enabled: $this->nullable))
@@ -40,12 +42,17 @@ abstract class Schema
             ))
             ->nextIf($this->allowCoercions, static::coerceToType())
             ->nextShortCicruit(static::checkType())
-
             ->next(SchemaRules::transform(...$this->userDefinedTransforms))
+
+            // Quit early
             ->stopIfValue(is_null(...))
+
+            // User transforms may have changed the type of the value
             ->nextIf(
                 count($this->userDefinedTransforms) > 0,
-                fn (ValueWithErrors $v) => $v->nextShortCicruit(static::checkType()),
+                fn (ValueWithErrors $v) => $v
+                    ->nextIf($this->allowCoercions, static::coerceToType())
+                    ->nextShortCicruit(static::checkType()),
             );
     }
 
