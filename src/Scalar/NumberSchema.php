@@ -4,8 +4,11 @@ declare(strict_types = 1);
 
 namespace TryAgainLater\Pup\Scalar;
 
+use TryAgainLater\Pup\Rules\NumberRules;
 use TryAgainLater\Pup\Scalar\ScalarSchema;
 use TryAgainLater\Pup\Util\ValueWithErrors;
+
+use function PHPUnit\Framework\isReadable;
 
 /**
  * Base schema both for floats and ints.
@@ -23,8 +26,16 @@ abstract class NumberSchema extends ScalarSchema
         $withErrors = parent::validate($value, nothing: func_num_args() === 0 || $nothing);
 
         return $withErrors
-            ->next($this->validateMin(...))
-            ->next($this->validateMax(...));
+            ->next(NumberRules::min(
+                enable: isset($this->min),
+                value: $this->min ?? 0,
+                isReachable: $this->minIsReachable ?? true,
+            ))
+            ->next(NumberRules::max(
+                enable: isset($this->max),
+                value: $this->max ?? 0,
+                isReachable: $this->maxIsReachable ?? true,
+            ));
     }
 
     public function min(int | float $min): static
@@ -67,35 +78,5 @@ abstract class NumberSchema extends ScalarSchema
     public function negative(): static
     {
         return $this->smallerThan(0);
-    }
-
-    protected function validateMin(ValueWithErrors $withErrors): ValueWithErrors
-    {
-        $error =
-            'The number must be greater than ' .
-            ($this->minIsReachable ? 'or equal to ' : '') .
-            "$this->min.";
-
-        return $withErrors->pushErrorsIfValue(
-            if: fn ($number) =>
-                isset($this->min) &&
-                ($number < $this->min || $number === $this->min && !$this->minIsReachable),
-            error: $error,
-        );
-    }
-
-    protected function validateMax(ValueWithErrors $withErrors): ValueWithErrors
-    {
-        $error =
-            'The number must be smaller than ' .
-            ($this->maxIsReachable ? 'or equal to ' : '') .
-            "$this->max.";
-
-        return $withErrors->pushErrorsIfValue(
-            if: fn ($number) =>
-                isset($this->max) &&
-                ($number > $this->max || $number === $this->max && !$this->maxIsReachable),
-            error: $error,
-        );
     }
 }
