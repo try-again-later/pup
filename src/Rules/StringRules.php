@@ -38,6 +38,26 @@ class StringRules
         };
     }
 
+    public static function checkType(): callable
+    {
+        return static function (ValueWithErrors $withErrors) {
+            return $withErrors->pushErrorsIfValue(
+                fn ($value) => !is_string($value) && !is_null($value),
+                'The value is not a string.',
+            );
+        };
+    }
+
+    public static function coerceToType(): callable
+    {
+        return static function (ValueWithErrors $withErrors) {
+            return $withErrors->tryOneOf(
+                self::fromBool(),
+                self::fromNumber(),
+            );
+        };
+    }
+
     public static function fromBool(): callable
     {
         return static function (ValueWithErrors $withErrors) {

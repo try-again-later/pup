@@ -54,4 +54,11 @@ class SchemaRules
             return $withErrors->mapValue(...$transforms);
         };
     }
+
+    public static function defaultCoerceToType(): callable
+    {
+        return static function (ValueWithErrors $withErrors) {
+            return $withErrors;
+        };
+    }
 }

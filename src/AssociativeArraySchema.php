@@ -4,12 +4,15 @@ declare(strict_types = 1);
 
 namespace TryAgainLater\Pup;
 
+use TryAgainLater\Pup\Rules\AssociativeArrayRules;
 use TryAgainLater\Pup\Util\ValueWithErrors;
 
 class AssociativeArraySchema extends Schema
 {
     public function __construct(private array $shape)
-    {}
+    {
+        parent::__construct(AssociativeArrayRules::checkType());
+    }
 
     public function validate(mixed $value = null, bool $nothing = false): ValueWithErrors
     {
@@ -17,16 +20,6 @@ class AssociativeArraySchema extends Schema
 
         return $withErrors
             ->next($this->validateAllKeysArePresent(...));
-    }
-
-    public static function checkType(): callable
-    {
-        return static function (ValueWithErrors $withErrors) {
-            return $withErrors->pushErrorsIfValue(
-                if: fn ($value) => !is_array($value),
-                error: 'The values is not an array',
-            );
-        };
     }
 
     protected function validateAllKeysArePresent(ValueWithErrors $withErrors): ValueWithErrors

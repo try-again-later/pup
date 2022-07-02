@@ -22,6 +22,15 @@ abstract class Schema
     private bool $allowCoercions = false;
     private array $userDefinedTransforms = [];
 
+    private $checkType;
+    private $coerceToType;
+
+    public function __construct(callable $checkType, ?callable $coerceToType = null)
+    {
+        $this->checkType = $checkType;
+        $this->coerceToType = $coerceToType;
+    }
+
     public function validate(mixed $value = null, bool $nothing = false): ValueWithErrors
     {
         $withErrors = func_num_args() === 0 || $nothing
@@ -40,8 +49,11 @@ abstract class Schema
                 enabled: $this->replaceNullWithDefault && $this->hasDefault,
                 replacement: $this->defaultValue,
             ))
-            ->nextIf($this->allowCoercions, static::coerceToType())
-            ->nextShortCicruit(static::checkType())
+            ->nextIf(
+                $this->allowCoercions,
+                $this->coerceToType ?? SchemaRules::defaultCoerceToType(),
+            )
+            ->nextShortCicruit($this->checkType)
             ->next(SchemaRules::transform(...$this->userDefinedTransforms))
 
             // Quit early
@@ -51,24 +63,12 @@ abstract class Schema
             ->nextIf(
                 count($this->userDefinedTransforms) > 0,
                 fn (ValueWithErrors $v) => $v
-                    ->nextIf($this->allowCoercions, static::coerceToType())
-                    ->nextShortCicruit(static::checkType()),
+                    ->nextIf(
+                        $this->allowCoercions,
+                        $this->coerceToType ?? SchemaRules::defaultCoerceToType(),
+                    )
+                    ->nextShortCicruit($this->checkType),
             );
-    }
-
-    public static function checkType(): callable
-    {
-        return static function (ValueWithErrors $withErrors) {
-            throw new LogicException('Not implemented.');
-        };
-    }
-
-    public static function coerceToType(): callable
-    {
-        return static function (ValueWithErrors $withErrors) {
-            // No coercions by default
-            return $withErrors;
-        };
     }
 
     public function required(): static

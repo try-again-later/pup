@@ -16,6 +16,11 @@ class StringSchema extends ScalarSchema
     private ?int $minLength = null;
     private ?int $maxLength = null;
 
+    public function __construct()
+    {
+        parent::__construct(StringRules::checkType(), StringRules::coerceToType());
+    }
+
     public function validate(mixed $value = null, bool $nothing = false): ValueWithErrors
     {
         $withErrors = parent::validate($value, nothing: func_num_args() === 0 || $nothing);
@@ -33,26 +38,6 @@ class StringSchema extends ScalarSchema
                 enabled: isset($this->maxLength),
                 length: $this->maxLength ?? 0,
             ));
-    }
-
-    public static function checkType(): callable
-    {
-        return static function (ValueWithErrors $withErrors) {
-            return $withErrors->pushErrorsIfValue(
-                fn ($value) => !is_string($value) && !is_null($value),
-                'The value is not a string.',
-            );
-        };
-    }
-
-    public static function coerceToType(): callable
-    {
-        return static function (ValueWithErrors $withErrors) {
-            return $withErrors->tryOneOf(
-                StringRules::fromBool(),
-                StringRules::fromNumber(),
-            );
-        };
     }
 
     public function length(int $length): static
