@@ -52,20 +52,24 @@ class StringSchema extends ScalarSchema
         return $newSchema;
     }
 
-    protected function checkType(ValueWithErrors $withErrors): ValueWithErrors
+    public static function checkType(): callable
     {
-        return $withErrors->pushErrorsIfValue(
-            fn ($value) => !is_string($value) && !is_null($value),
-            'The value is not a string.',
-        );
+        return static function (ValueWithErrors $withErrors) {
+            return $withErrors->pushErrorsIfValue(
+                fn ($value) => !is_string($value) && !is_null($value),
+                'The value is not a string.',
+            );
+        };
     }
 
-    protected function coerceToType(ValueWithErrors $withErrors): ValueWithErrors
+    public static function coerceToType(): callable
     {
-        return $withErrors->tryOneOf(
-            self::fromBool(...),
-            self::fromNumber(...),
-        );
+        return static function (ValueWithErrors $withErrors) {
+            return $withErrors->tryOneOf(
+                self::fromBool(...),
+                self::fromNumber(...),
+            );
+        };
     }
 
     protected function validateExactLength(ValueWithErrors $withErrors): ValueWithErrors

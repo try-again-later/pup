@@ -19,17 +19,14 @@ class AssociativeArraySchema extends Schema
             ->next($this->validateAllKeysArePresent(...));
     }
 
-    protected function checkType(ValueWithErrors $withErrors): ValueWithErrors
+    public static function checkType(): callable
     {
-        return $withErrors->pushErrorsIfValue(
-            if: fn ($value) => !is_array($value),
-            error: 'The values is not an array',
-        );
-    }
-
-    protected function coerceToType(ValueWithErrors $withErrors): ValueWithErrors
-    {
-        return $withErrors->pushErrors('No coercions are available.');
+        return static function (ValueWithErrors $withErrors) {
+            return $withErrors->pushErrorsIfValue(
+                if: fn ($value) => !is_array($value),
+                error: 'The values is not an array',
+            );
+        };
     }
 
     protected function validateAllKeysArePresent(ValueWithErrors $withErrors): ValueWithErrors

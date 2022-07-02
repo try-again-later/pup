@@ -135,13 +135,24 @@ class ValueWithErrors
 
     public function nextIf(callable | bool $condition, callable ...$checks): self
     {
-        if ($this->stop || count($checks) === 0) {
+        if (count($checks) === 0) {
             return $this;
         }
 
         return $this->if(
             $condition,
             fn (ValueWithErrors $v) => $v->next(...$checks),
+        );
+    }
+
+    public function nextShortCicruit(callable ...$checks): self
+    {
+        if (count($checks) === 0) {
+            return $this;
+        }
+
+        return $this->shortCircuit(
+            fn (ValueWithErrors $withErrors) => $withErrors->next(...$checks)
         );
     }
 
@@ -258,13 +269,13 @@ class ValueWithErrors
         return $this;
     }
 
-    public function stopIf(callable | bool $condition): self
+    public function stopIf(callable | bool $if): self
     {
         if ($this->stop) {
             return $this;
         }
 
-        if (is_bool($condition) && $condition || is_callable($condition) && $condition($this)) {
+        if (is_bool($if) && $if || is_callable($if) && $if($this)) {
             return $this->stop();
         }
         return $this;
@@ -281,7 +292,8 @@ class ValueWithErrors
         return $newValueWithErrors;
     }
 
-    public function pushErrorsIfValue(callable $if, mixed ...$errors): self {
+    public function pushErrorsIfValue(callable $if, mixed ...$errors): self
+    {
         if ($this->stop || count($errors) === 0) {
             return $this;
         }
@@ -295,6 +307,25 @@ class ValueWithErrors
             return $this->pushErrors(...$evaluatedErrors);
         }
         return $this;
+    }
+
+    public function pushErrorsIf(callable | bool $if, mixed ...$errors): self
+    {
+        if (count($errors) === 0) {
+            return $this;
+        }
+
+        return $this->nextIf(
+            $if,
+            static function (self $withErrors) use ($errors) {
+                $evaluatedErrors = array_map(
+                    fn ($error) => is_callable($error) ? $error($this) : $error,
+                    $errors,
+                );
+
+                return $withErrors->pushErrors(...$evaluatedErrors);
+            },
+        );
     }
 
     /**
@@ -330,7 +361,7 @@ class ValueWithErrors
     public function mapValueIf(
         callable $map,
         callable $if,
-        callable | string $error,
+        callable | string | null $error = null,
     ): self
     {
         if ($this->stop) {
@@ -338,6 +369,10 @@ class ValueWithErrors
         }
 
         if (!$if($this->value())) {
+            if (!isset($error)) {
+                return $this;
+            }
+
             $error = match (is_callable($error)) {
                 true => $error($this->value()),
                 false => $error,

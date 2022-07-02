@@ -8,21 +8,25 @@ use TryAgainLater\Pup\Util\ValueWithErrors;
 
 class IntSchema extends NumberSchema
 {
-    protected function checkType(ValueWithErrors $withErrors): ValueWithErrors
+    public static function checkType(): callable
     {
-        return $withErrors->pushErrorsIfValue(
-            fn ($value) => !is_int($value) && !is_null($value),
-            'The value is not an int.',
-        );
+        return static function (ValueWithErrors $withErrors) {
+            return $withErrors->pushErrorsIfValue(
+                fn ($value) => !is_int($value) && !is_null($value),
+                'The value is not an int.',
+            );
+        };
     }
 
-    protected function coerceToType(ValueWithErrors $withErrors): ValueWithErrors
+    public static function coerceToType(): callable
     {
-        return $withErrors->tryOneOf(
-            self::fromBool(...),
-            self::fromString(...),
-            self::fromFloat(...),
-        );
+        return static function (ValueWithErrors $withErrors) {
+            return $withErrors->tryOneOf(
+                self::fromBool(...),
+                self::fromString(...),
+                self::fromFloat(...),
+            );
+        };
     }
 
     private static function fromBool(ValueWithErrors $withErrors): ValueWithErrors

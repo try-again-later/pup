@@ -4,6 +4,8 @@ declare(strict_types = 1);
 
 namespace TryAgainLater\Pup;
 
+use LogicException;
+
 use TryAgainLater\Pup\Rules\SchemaRules;
 use TryAgainLater\Pup\Scalar\{FloatSchema, IntSchema, StringSchema};
 use TryAgainLater\Pup\Util\ValueWithErrors;
@@ -20,10 +22,6 @@ abstract class Schema
     private bool $allowCoercions = false;
     private array $userDefinedTransforms = [];
 
-    abstract protected function checkType(ValueWithErrors $withErrors): ValueWithErrors;
-
-    abstract protected function coerceToType(ValueWithErrors $withErrors): ValueWithErrors;
-
     public function validate(mixed $value = null, bool $nothing = false): ValueWithErrors
     {
         $withErrors = func_num_args() === 0 || $nothing
@@ -31,20 +29,39 @@ abstract class Schema
             : ValueWithErrors::makeValue($value);
 
         return $withErrors
-            ->nextIf($this->hasDefault, SchemaRules::default($this->defaultValue))
-            ->nextIf($this->required, SchemaRules::required(...))
-            ->stopIf(fn ($v) => !$v->hasValue())
+            ->next(SchemaRules::default(enabled: $this->hasDefault, value: $this->defaultValue))
+            ->next(SchemaRules::required(enabled: $this->required))
+            ->stopIf(fn (ValueWithErrors $v) => !$v->hasValue())
 
-            ->nextIf(!$this->nullable, SchemaRules::notNullable(...))
+            ->next(SchemaRules::nullable(enabled: $this->nullable))
+            ->next(SchemaRules::replaceNullWith(
+                enabled: $this->replaceNullWithDefault && $this->hasDefault,
+                replacement: $this->defaultValue,
+            ))
+            ->nextIf($this->allowCoercions, static::coerceToType())
+            ->nextShortCicruit(static::checkType())
+
+            ->next(SchemaRules::transform(...$this->userDefinedTransforms))
+            ->stopIfValue(is_null(...))
             ->nextIf(
-                $this->replaceNullWithDefault && $this->hasDefault,
-                SchemaRules::replaceNullWithDefault($this->defaultValue),
-            )
-            ->nextIf($this->allowCoercions, $this->coerceToType(...))
-            ->shortCircuit(fn ($v) => $v->next($this->checkType(...)))
+                count($this->userDefinedTransforms) > 0,
+                fn (ValueWithErrors $v) => $v->nextShortCicruit(static::checkType()),
+            );
+    }
 
-            ->next(fn ($v) => $v->mapValue(...$this->userDefinedTransforms))
-            ->stopIfValue(fn ($v) => is_null($v));
+    public static function checkType(): callable
+    {
+        return static function (ValueWithErrors $withErrors) {
+            throw new LogicException('Not implemented.');
+        };
+    }
+
+    public static function coerceToType(): callable
+    {
+        return static function (ValueWithErrors $withErrors) {
+            // No coercions by default
+            return $withErrors;
+        };
     }
 
     public function required(): static
