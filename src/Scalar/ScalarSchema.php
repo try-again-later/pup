@@ -4,6 +4,7 @@ declare(strict_types = 1);
 
 namespace TryAgainLater\Pup\Scalar;
 
+use TryAgainLater\Pup\Rules\ScalarRules;
 use TryAgainLater\Pup\Schema;
 use TryAgainLater\Pup\Util\ValueWithErrors;
 
@@ -16,7 +17,7 @@ abstract class ScalarSchema extends Schema
         $withErrors = parent::validate($value, nothing: func_num_args() === 0 || $nothing);
 
         return $withErrors
-            ->next($this->validateAllowedValues(...));
+            ->next(ScalarRules::oneOf(isset($this->allowedValues), $this->allowedValues ?? []));
     }
 
     public function oneOf(mixed ...$allowedValues): static
@@ -24,19 +25,5 @@ abstract class ScalarSchema extends Schema
         $newSchema = clone $this;
         $newSchema->allowedValues = $allowedValues;
         return $newSchema;
-    }
-
-    protected function validateAllowedValues(ValueWithErrors $withErrors): ValueWithErrors
-    {
-        if (!isset($this->allowedValues)) {
-            return $withErrors;
-        }
-        if (!in_array($withErrors->value(), $this->allowedValues, strict: true)) {
-            $allowedValuesString = implode(', ', $this->allowedValues);
-            return $withErrors->pushErrors(
-                "Only these scalar values are allowed: $allowedValuesString"
-            );
-        }
-        return $withErrors;
     }
 }

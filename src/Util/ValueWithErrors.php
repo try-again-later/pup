@@ -270,7 +270,7 @@ class ValueWithErrors
         }
 
         $newValueWithErrors = clone $this;
-        $newValueWithErrors->errors = [...$this->errors, ...$errors];
+        $newValueWithErrors->errors = [...array_values($this->errors), ...array_values($errors)];
         return $newValueWithErrors;
     }
 

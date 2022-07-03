@@ -13,13 +13,14 @@ use TryAgainLater\Pup\AssociativeArraySchema;
 use TryAgainLater\Pup\Attributes\Generic\{
     ParsedProperty,
     AllowCoercions,
+    OneOf,
     ReplaceNullWithDefault,
     Required,
     Transform,
 };
 use TryAgainLater\Pup\Attributes\String\{MinLength, MaxLength, Length};
 use TryAgainLater\Pup\Attributes\Number\{Min, Max, GreaterThan, Negative, Positive, SmallerThan};
-use TryAgainLater\Pup\Scalar\{NumberSchema, StringSchema};
+use TryAgainLater\Pup\Scalar\{NumberSchema, ScalarSchema, StringSchema};
 use TryAgainLater\Pup\{Schema, SchemaParameters};
 
 #[Attribute(Attribute::TARGET_CLASS)]
@@ -100,6 +101,19 @@ class FromAssociativeArray
         return $schema;
     }
 
+    public static function setScalarSchemaOptions(
+        ReflectionProperty $reflectionProperty,
+        ScalarSchema $schema,
+    )
+    {
+        if (self::hasAttribute($reflectionProperty, OneOf::class)) {
+            $oneOfAttributeInstance = self::getInstance($reflectionProperty, OneOf::class);
+            $schema = $schema->oneOf(...$oneOfAttributeInstance->values);
+        }
+
+        return $schema;
+    }
+
     public static function schemaFromClass(string $class): AssociativeArraySchema
     {
         $reflectionClass = new ReflectionClass($class);
@@ -160,6 +174,9 @@ class FromAssociativeArray
             if ($type === 'int' || $type === 'float') {
                 $schema = self::setNumberSchemaOptions($reflectionProperty, $schema);
             }
+            if (in_array($type, ['int', 'float', 'string'], strict: true)) {
+                $schema = self::setScalarSchemaOptions($reflectionProperty, $schema);
+            }
 
             $arrayKey = $propertyAttributeInstance->name ?? $reflectionProperty->getName();
             $shape[$arrayKey] = $schema;
@@ -195,7 +212,6 @@ class FromAssociativeArray
 
             $arrayKey = $propertyAttributeInstance->name ?? $reflectionProperty->getName();
             if (array_key_exists($arrayKey, $validatedArray)) {
-                $reflectionProperty->setAccessible(true);
                 $reflectionProperty->setValue($instance, $validatedArray[$arrayKey]);
             }
         }
@@ -210,7 +226,8 @@ class FromAssociativeArray
     {
         [$instance, $errors] = self::tryInstance($class, $array, $schema);
         if (count($errors) > 0) {
-            $message = implode(PHP_EOL, array_map(
+            $message = 'Errors while parsing associative array:' . PHP_EOL;
+            $message .= implode(PHP_EOL, array_map(
                 static function ($keyError) {
                     [$key, $error] = $keyError;
                     return "[$key] => $error";

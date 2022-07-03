@@ -65,6 +65,10 @@ class User
     #[ParsedProperty]
     private string $website = 'No website';
 
+    #[ParsedProperty]
+    #[OneOf('male', 'female')]
+    private ?string $sex = null;
+
     use MakeParsed;
 }
 
@@ -74,5 +78,6 @@ $user = User::from([
     'name' => 'John',
     'age' => -42,
     'email' => 'john@example.com',
+    'sex' => 'male',
 ]);
 ```
