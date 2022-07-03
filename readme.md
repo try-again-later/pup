@@ -37,7 +37,7 @@ $user = [
 You can also use attributes on existing class:
 
 ```php
-use TryAgainLater\Pup\Attributes\FromAssociativeArray;
+use TryAgainLater\Pup\Attributes\{FromAssociativeArray, MakeParsed};
 use TryAgainLater\Pup\Attributes\Generic\{ParsedProperty, Required, Transform};
 use TryAgainLater\Pup\Attributes\Number\Positive;
 use TryAgainLater\Pup\Attributes\String\MaxLength;
@@ -64,16 +64,15 @@ class User
 
     #[ParsedProperty]
     private string $website = 'No website';
+
+    use MakeParsed;
 }
 
-$rawUser = [
+// Throws InvalidArgumentException with the following message:
+// "[age] => The number must be greater than 0."
+$user = User::from([
     'name' => 'John',
     'age' => -42,
     'email' => 'john@example.com',
-];
-
-// Throws InvalidArgumentException with the following message
-// "[age] => The number must be greater than 0."
-
-$user = FromAssociativeArray::instance(User::class, $rawUser);
+]);
 ```
