@@ -11,11 +11,23 @@ A small PHP library for value parsing and validation inspired by
 use TryAgainLater\Pup\Schema;
 
 $userSchema = Schema::associativeArray([
-    'name' => Schema::string()->required()->transform(fn ($name) => "NAME = $name"),
-    'age' => Schema::int()->positive(),
-    'email' => Schema::string()->required()->max(255),
-    'website' => Schema::string()->default('No website'),
-    'sex' => Schema::string()->nullable()->oneOf('male', 'female'),
+    'name' => Schema::string()
+        ->required()
+        ->transform(fn ($name) => "NAME = $name"),
+
+    'age' => Schema::int()
+        ->positive(),
+
+    'email' => Schema::string()
+        ->required()
+        ->max(255),
+
+    'website' => Schema::string()
+        ->default('No website'),
+
+    'sex' => Schema::string()
+        ->nullable()
+        ->oneOf('male', 'female'),
 
     'allowSendingEmails' => Schema::bool()
         ->default(false)
@@ -58,7 +70,7 @@ $user = [
 
 ```php
 use TryAgainLater\Pup\Attributes\{FromAssociativeArray, MakeParsed};
-use TryAgainLater\Pup\Attributes\Generic\{ParsedProperty, Required, Transform};
+use TryAgainLater\Pup\Attributes\Generic\{OneOf, ParsedProperty, Required, Transform, Test};
 use TryAgainLater\Pup\Attributes\Number\Positive;
 use TryAgainLater\Pup\Attributes\String\MaxLength;
 
@@ -71,7 +83,8 @@ class User
     }
 
     #[ParsedProperty]
-    #[Required, Transform([self::class, 'transformName'])]
+    #[Required]
+    #[Transform([self::class, 'transformName'])]
     private string $name;
 
     #[ParsedProperty]
@@ -79,7 +92,8 @@ class User
     private int $age;
 
     #[ParsedProperty]
-    #[Required, MaxLength(255)]
+    #[Required]
+    #[MaxLength(255)]
     private string $email;
 
     #[ParsedProperty]
