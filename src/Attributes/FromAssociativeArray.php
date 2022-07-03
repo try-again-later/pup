@@ -17,8 +17,10 @@ use TryAgainLater\Pup\Attributes\Generic\{
     Required,
     Transform,
 };
-use TryAgainLater\Pup\Schema;
-use TryAgainLater\Pup\SchemaParameters;
+use TryAgainLater\Pup\Attributes\String\{MinLength, MaxLength, Length};
+use TryAgainLater\Pup\Attributes\Number\{Min, Max, GreaterThan, Negative, Positive, SmallerThan};
+use TryAgainLater\Pup\Scalar\{NumberSchema, StringSchema};
+use TryAgainLater\Pup\{Schema, SchemaParameters};
 
 #[Attribute(Attribute::TARGET_CLASS)]
 class FromAssociativeArray
@@ -29,6 +31,73 @@ class FromAssociativeArray
     ): bool
     {
         return !empty($reflectionProperty->getAttributes($attributeClass));
+    }
+
+    private static function getInstance(
+        ReflectionProperty $reflectionProperty,
+        string $attributeClass,
+    )
+    {
+        return $reflectionProperty->getAttributes($attributeClass)[0]->newInstance();
+    }
+
+    public static function setStringSchemaOptions(
+        ReflectionProperty $reflectionProperty,
+        StringSchema $schema,
+    ): StringSchema
+    {
+        if (self::hasAttribute($reflectionProperty, MinLength::class)) {
+            $minAttributeInstance = self::getInstance($reflectionProperty, MinLength::class);
+            $schema = $schema->min($minAttributeInstance->value);
+        }
+
+        if (self::hasAttribute($reflectionProperty, MaxLength::class)) {
+            $maxAttributeInstance = self::getInstance($reflectionProperty, MaxLength::class);
+            $schema = $schema->max($maxAttributeInstance->value);
+        }
+
+        if (self::hasAttribute($reflectionProperty, Length::class)) {
+            $lengthAttributeInstance = self::getInstance($reflectionProperty, Length::class);
+            $schema = $schema->length($lengthAttributeInstance->value);
+        }
+
+        return $schema;
+    }
+
+    public static function setNumberSchemaOptions(
+        ReflectionProperty $reflectionProperty,
+        NumberSchema $schema,
+    ): NumberSchema
+    {
+        if (self::hasAttribute($reflectionProperty, Min::class)) {
+            $minAttributeInstance = self::getInstance($reflectionProperty, Min::class);
+            $schema = $schema->min($minAttributeInstance->value);
+        }
+
+        if (self::hasAttribute($reflectionProperty, Max::class)) {
+            $maxAttributeInstance = self::getInstance($reflectionProperty, Max::class);
+            $schema = $schema->max($maxAttributeInstance->value);
+        }
+
+        if (self::hasAttribute($reflectionProperty, GreaterThan::class)) {
+            $greaterThanInstance = self::getInstance($reflectionProperty, GreaterThan::class);
+            $schema = $schema->greaterThan($greaterThanInstance->value);
+        }
+
+        if (self::hasAttribute($reflectionProperty, SmallerThan::class)) {
+            $smallerThanInstance = self::getInstance($reflectionProperty, SmallerThan::class);
+            $schema = $schema->smallerThan($smallerThanInstance->value);
+        }
+
+        if (self::hasAttribute($reflectionProperty, Negative::class)) {
+            $schema = $schema->negative();
+        }
+
+        if (self::hasAttribute($reflectionProperty, Positive::class)) {
+            $schema = $schema->positive();
+        }
+
+        return $schema;
     }
 
     public static function schemaFromClass(string $class): AssociativeArraySchema
@@ -61,7 +130,12 @@ class FromAssociativeArray
                 'int' => fn (...$args) => Schema::int(...$args),
                 'float' => fn (...$args) => Schema::float(...$args),
                 'string' => fn (...$args) => Schema::string(...$args),
+                default => null,
             };
+
+            if (is_null($createSchema)) {
+                continue;
+            }
 
             $schema = $createSchema(new SchemaParameters(
                 required: self::hasAttribute($reflectionProperty, Required::class),
@@ -80,6 +154,13 @@ class FromAssociativeArray
                 $schema = $schema->transform(...$transformInstance->transforms);
             }
 
+            if ($type === 'string') {
+                $schema = self::setStringSchemaOptions($reflectionProperty, $schema);
+            }
+            if ($type === 'int' || $type === 'float') {
+                $schema = self::setNumberSchemaOptions($reflectionProperty, $schema);
+            }
+
             $arrayKey = $propertyAttributeInstance->name ?? $reflectionProperty->getName();
             $shape[$arrayKey] = $schema;
         }
@@ -87,7 +168,7 @@ class FromAssociativeArray
         return Schema::associativeArray($shape);
     }
 
-    public static function instance(
+    public static function tryInstance(
         string $class,
         array $array,
         ?AssociativeArraySchema $schema = null,
@@ -98,7 +179,7 @@ class FromAssociativeArray
         }
         $arrayWithErrors = $schema->validate($array);
         if ($arrayWithErrors->hasErrors() || !$arrayWithErrors->hasValue()) {
-            return false;
+            return [null, $arrayWithErrors->errors()];
         }
         $validatedArray = $arrayWithErrors->value();
 
@@ -117,6 +198,27 @@ class FromAssociativeArray
                 $reflectionProperty->setAccessible(true);
                 $reflectionProperty->setValue($instance, $validatedArray[$arrayKey]);
             }
+        }
+        return [$instance, $arrayWithErrors->errors()];
+    }
+
+    public static function instance(
+        string $class,
+        array $array,
+        ?AssociativeArraySchema $schema = null,
+    )
+    {
+        [$instance, $errors] = self::tryInstance($class, $array, $schema);
+        if (count($errors) > 0) {
+            $message = implode(PHP_EOL, array_map(
+                static function ($keyError) {
+                    [$key, $error] = $keyError;
+                    return "[$key] => $error";
+                },
+                $errors,
+            ));
+
+            throw new InvalidArgumentException($message);
         }
         return $instance;
     }

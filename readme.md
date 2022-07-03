@@ -39,6 +39,8 @@ You can also use attributes on existing class:
 ```php
 use TryAgainLater\Pup\Attributes\FromAssociativeArray;
 use TryAgainLater\Pup\Attributes\Generic\{ParsedProperty, Required, Transform};
+use TryAgainLater\Pup\Attributes\Number\Positive;
+use TryAgainLater\Pup\Attributes\String\MaxLength;
 
 #[FromAssociativeArray]
 class User
@@ -53,18 +55,25 @@ class User
     private string $name;
 
     #[ParsedProperty]
+    #[Positive]
+    private int $age;
+
+    #[ParsedProperty]
+    #[Required, MaxLength(255)]
+    private string $email;
+
+    #[ParsedProperty]
     private string $website = 'No website';
 }
 
 $rawUser = [
     'name' => 'John',
+    'age' => -42,
+    'email' => 'john@example.com',
 ];
 
-// User Object
-// (
-//   [name:User:private] => 'NAME = John'
-//   [website:User:private] => 'No website'
-// )
+// Throws InvalidArgumentException with the following message
+// "[age] => The number must be greater than 0."
 
 $user = FromAssociativeArray::instance(User::class, $rawUser);
 ```
