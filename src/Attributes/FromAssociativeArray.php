@@ -16,6 +16,7 @@ use TryAgainLater\Pup\Attributes\Generic\{
     OneOf,
     ReplaceNullWithDefault,
     Required,
+    Test,
     Transform,
 };
 use TryAgainLater\Pup\Attributes\String\{MinLength, MaxLength, Length};
@@ -144,6 +145,7 @@ class FromAssociativeArray
                 'int' => fn (...$args) => Schema::int(...$args),
                 'float' => fn (...$args) => Schema::float(...$args),
                 'string' => fn (...$args) => Schema::string(...$args),
+                'bool' => fn (...$args) =>Schema::bool(...$args),
                 default => null,
             };
 
@@ -166,6 +168,16 @@ class FromAssociativeArray
             foreach ($reflectionProperty->getAttributes(Transform::class) as $transformAttribute) {
                 $transformInstance = $transformAttribute->newInstance();
                 $schema = $schema->transform(...$transformInstance->transforms);
+            }
+
+            foreach ($reflectionProperty->getAttributes(Test::class) as $testAttribute) {
+                $testInstance = $testAttribute->newInstance();
+                $schema = $schema->test(
+                    $testInstance->name,
+                    $testInstance->check,
+                    $testInstance->message,
+                    $testInstance->shortCircuit,
+                );
             }
 
             if ($type === 'string') {

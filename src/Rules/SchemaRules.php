@@ -5,6 +5,7 @@ declare(strict_types = 1);
 namespace TryAgainLater\Pup\Rules;
 
 use TryAgainLater\Pup\Util\ValueWithErrors;
+use TryAgainLater\Pup\Attributes\Generic\Test;
 
 class SchemaRules
 {
@@ -58,6 +59,33 @@ class SchemaRules
     public static function defaultCoerceToType(): callable
     {
         return static function (ValueWithErrors $withErrors) {
+            return $withErrors;
+        };
+    }
+
+    public static function test(Test ...$tests): callable
+    {
+        return static function (ValueWithErrors $withErrors) use ($tests) {
+            if (count($tests) === 0) {
+                return $withErrors;
+            }
+
+            foreach ($tests as $test) {
+                $errorMessage = match (is_callable($test->message)) {
+                    true => ($test->message)($withErrors->value()),
+                    false => $test->message,
+                };
+
+                $withNewErrors = $withErrors->pushErrorsIfValue(
+                    if: fn ($value) => !($test->check)($value),
+                    errors: "Error in test '$test->name': $errorMessage",
+                );
+
+                if ($test->shortCircuit) {
+                    $withErrors = $withErrors->nextShortCicruit(fn () => $withNewErrors);
+                }
+            }
+
             return $withErrors;
         };
     }

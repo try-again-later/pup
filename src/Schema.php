@@ -5,7 +5,8 @@ declare(strict_types = 1);
 namespace TryAgainLater\Pup;
 
 use TryAgainLater\Pup\Rules\SchemaRules;
-use TryAgainLater\Pup\Scalar\{FloatSchema, IntSchema, StringSchema};
+use TryAgainLater\Pup\Attributes\Generic\Test;
+use TryAgainLater\Pup\Scalar\{BoolSchema, FloatSchema, IntSchema, StringSchema};
 use TryAgainLater\Pup\Util\ValueWithErrors;
 
 abstract class Schema
@@ -19,6 +20,8 @@ abstract class Schema
 
     private bool $allowCoercions = false;
     private array $userDefinedTransforms = [];
+
+    private array $userDefinedTests = [];
 
     private $checkType;
     private $coerceToType;
@@ -65,8 +68,9 @@ abstract class Schema
                 $this->allowCoercions,
                 $this->coerceToType ?? SchemaRules::defaultCoerceToType(),
             )
-            ->nextShortCicruit($this->checkType)
+            ->next(SchemaRules::test(...$this->userDefinedTests))
             ->next(SchemaRules::transform(...$this->userDefinedTransforms))
+            ->nextShortCicruit($this->checkType)
 
             // Quit early
             ->stopIfValue(is_null(...))
@@ -131,6 +135,19 @@ abstract class Schema
         return $newSchema;
     }
 
+    public function test(
+        string $name,
+        callable $check,
+        callable | string $message,
+        bool $shortCircuit = false,
+    )
+    {
+        $newSchema = clone $this;
+        $newTest = new Test($name, $check, $message, shortCircuit: $shortCircuit);
+        $newSchema->userDefinedTests = [...$this->userDefinedTests, $newTest];
+        return $newSchema;
+    }
+
     public function isValid(mixed $value = null): bool
     {
         return $this->validate($value, nothing: func_num_args() === 0)->hasValue();
@@ -155,6 +172,13 @@ abstract class Schema
     ): FloatSchema
     {
         return new FloatSchema($schemaParameters);
+    }
+
+    public static function bool(
+        SchemaParameters $schemaParameters = new SchemaParameters()
+    ): BoolSchema
+    {
+        return new BoolSchema($schemaParameters);
     }
 
     public static function associativeArray(

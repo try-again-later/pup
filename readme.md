@@ -3,7 +3,9 @@
 A small PHP library for value parsing and validation inspired by
 [yup](https://github.com/jquense/yup).
 
-## Example
+## Examples
+
+### Create schema using builder syntax
 
 ```php
 use TryAgainLater\Pup\Schema;
@@ -13,28 +15,46 @@ $userSchema = Schema::associativeArray([
     'age' => Schema::int()->positive(),
     'email' => Schema::string()->required()->max(255),
     'website' => Schema::string()->default('No website'),
+    'sex' => Schema::string()->nullable()->oneOf('male', 'female'),
+
+    'allowSendingEmails' => Schema::bool()
+        ->default(false)
+        ->test(
+            name: 'Is string bool',
+            check: fn ($string) => in_array($string, ['true', 'false'], strict: true),
+            message: 'Only "true" or "false" strings are allowed.',
+            shortCircuit: true,
+        )
+        ->transform(fn ($string) => match ($string) {
+            'true', => true,
+            'false' => false,
+        }),
 ]);
 
 $user = [
     'name' => 'John',
-    'age' => -42,
+    'age' => 42,
     'email' => 'john@example.com',
+    'sex' => 'male',
+    'allowSendingEmails' => 'true',
 ];
 
 // validatedUser: [
-//   name    => 'NAME = John',
-//   age     => -42,
-//   email   => 'john@example.com',
-//   website => 'No website',
+//   name               => 'NAME = John',
+//   age                => -42,
+//   email              => 'john@example.com',
+//   website            => 'No website',
+//   sex                => 'male',
+//   allowSendingEmails => bool(true)
 // ]
 
 // errors: [
 //   ['age', 'The number must be greater than 0']
 // ]
-[$validatedUser, $errors] = $userSchema->validate($user)->get();
+[$validatedUser, $errors] = $userSchema->validate($user)->tryGet();
 ```
 
-You can also use attributes on existing class:
+### Create schema by annotating existing class
 
 ```php
 use TryAgainLater\Pup\Attributes\{FromAssociativeArray, MakeParsed};
@@ -69,6 +89,29 @@ class User
     #[OneOf('male', 'female')]
     private ?string $sex = null;
 
+    public static function validateBoolString(string $string): bool
+    {
+        return in_array($string, ['true', 'false'], strict: true);
+    }
+
+    public static function stringToBool(string $string): bool
+    {
+        return match ($string) {
+            'true', => true,
+            'false' => false,
+        };
+    }
+
+    #[ParsedProperty('emails')]
+    #[Test(
+        name: 'Is string bool',
+        check: [self::class, 'validateBoolString'],
+        message: 'Only "true" or "false" strings are allowed.',
+        shortCircuit: true,
+    )]
+    #[Transform([self::class, 'stringToBool'])]
+    private bool $allowSendingEmails = false;
+
     use MakeParsed;
 }
 
@@ -79,5 +122,6 @@ $user = User::from([
     'age' => -42,
     'email' => 'john@example.com',
     'sex' => 'male',
+    'emails' => 'true',
 ]);
 ```
