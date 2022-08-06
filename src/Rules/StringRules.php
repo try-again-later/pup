@@ -22,7 +22,7 @@ class StringRules
     {
         return static function (ValueWithErrors $withErrors) use ($enabled, $length) {
             return $withErrors->pushErrorsIfValue(
-                if: fn ($string) => $enabled && strlen($string) <= $length,
+                if: fn ($string) => $enabled && strlen($string) < $length,
                 error: "String is required to be at least '$length' characters long,",
             );
         };
@@ -32,7 +32,7 @@ class StringRules
     {
         return static function (ValueWithErrors $withErrors) use ($enabled, $length) {
             return $withErrors->pushErrorsIfValue(
-                if: fn ($string) => $enabled && strlen($string) >= $length,
+                if: fn ($string) => $enabled && strlen($string) > $length,
                 error: "String is required to be at most '$length' characters long,",
             );
         };

@@ -83,6 +83,8 @@ class SchemaRules
 
                 if ($test->shortCircuit) {
                     $withErrors = $withErrors->nextShortCicruit(fn () => $withNewErrors);
+                } else {
+                    $withErrors = $withNewErrors;
                 }
             }
 
