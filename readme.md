@@ -1,5 +1,26 @@
 # Pup
 
+<p align="center">
+  <a href="https://github.com/try-again-later/pup/actions/workflows/Tests.yml">
+    <img
+      src="https://github.com/try-again-later/pup/actions/workflows/Tests.yml/badge.svg"
+      alt="Tests"
+    >
+  </a>
+  <a href="https://packagist.org/packages/try-again-later/pup">
+    <img
+      src="https://img.shields.io/packagist/v/try-again-later/pup"
+      alt="Latest Version"
+    >
+  </a>
+  <a href="https://packagist.org/packages/try-again-later/pup">
+    <img
+      src="https://img.shields.io/packagist/l/try-again-later/pup"
+      alt="Latest Version"
+    >
+  </a>
+</p>
+
 A small PHP library for value parsing and validation inspired by
 [yup](https://github.com/jquense/yup).
 
