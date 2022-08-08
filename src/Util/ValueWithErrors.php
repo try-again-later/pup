@@ -216,7 +216,7 @@ class ValueWithErrors
         }
 
         $candidate = $this->oneOf(...$checks);
-        if (count($this->errors()) > count($candidate->errors())) {
+        if (count($this->errors()) < count($candidate->errors())) {
             return $this;
         }
         return $candidate;
