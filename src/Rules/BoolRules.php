@@ -55,7 +55,12 @@ class BoolRules
     {
         return static function (ValueWithErrors $withErrors) {
             return $withErrors->mapValueIf(
-                map: fn ($string) => $string === '' ? false : true,
+                map: fn ($string) => match ($string) {
+                    '' => false,
+                    'false' => false,
+                    'true' => true,
+                    default => false,
+                },
                 if: is_string(...),
                 error: 'The value is not a string.',
             );
