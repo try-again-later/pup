@@ -19,11 +19,17 @@ abstract class Schema
     private bool $replaceNullWithDefault = false;
 
     private bool $allowCoercions = false;
+
+    /** @var list<callable(mixed): mixed> */
     private array $userDefinedTransforms = [];
 
+    /** @var list<Test> */
     private array $userDefinedTests = [];
 
+    /** @var callable(ValueWithErrors): ValueWithErrors */
     private $checkType;
+
+    /** @var null|callable(ValueWithErrors): ValueWithErrors */
     private $coerceToType;
 
     public function __construct(
@@ -120,7 +126,7 @@ abstract class Schema
         return $newSchema;
     }
 
-    public function transform(callable $userDefinedTransform)
+    public function transform(callable $userDefinedTransform): static
     {
         $newSchema = clone $this;
         $newSchema->userDefinedTransforms =
@@ -128,7 +134,7 @@ abstract class Schema
         return $newSchema;
     }
 
-    public function replaceNullWithDefault()
+    public function replaceNullWithDefault(): static
     {
         $newSchema = clone $this;
         $newSchema->replaceNullWithDefault = true;
@@ -140,7 +146,7 @@ abstract class Schema
         callable $check,
         callable | string $message,
         bool $shortCircuit = false,
-    )
+    ): static
     {
         $newSchema = clone $this;
         $newTest = new Test($name, $check, $message, shortCircuit: $shortCircuit);
@@ -181,6 +187,9 @@ abstract class Schema
         return new BoolSchema($schemaParameters);
     }
 
+    /**
+     * @param array<string, Schema> $shape
+     */
     public static function associativeArray(
         array $shape,
         SchemaParameters $schemaParameters = new SchemaParameters(),

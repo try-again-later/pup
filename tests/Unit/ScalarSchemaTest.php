@@ -10,7 +10,7 @@ use TryAgainLater\Pup\Schema;
 class ScalarSchemaTest extends TestCase
 {
     #[Test]
-    public function oneOfDoesNotProduceError_whenPassedAllowedValue()
+    public function oneOfDoesNotProduceError_whenPassedAllowedValue(): void
     {
         $value = 'foo';
         $schema = Schema::string()->oneOf('foo', 'bar', 'baz');
@@ -21,7 +21,7 @@ class ScalarSchemaTest extends TestCase
     }
 
     #[Test]
-    public function oneOfProducesError_whenPassedForbiddenValue()
+    public function oneOfProducesError_whenPassedForbiddenValue(): void
     {
         $value = 'something forbidden';
         $schema = Schema::string()->oneOf('foo', 'bar', 'baz');

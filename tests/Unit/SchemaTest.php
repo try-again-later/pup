@@ -10,7 +10,7 @@ use PHPUnit\Framework\Attributes\Test;
 class SchemaTest extends TestCase
 {
     #[Test]
-    public function transform_singleTransformWorksCorrectly()
+    public function transform_singleTransformWorksCorrectly(): void
     {
         $value = 'foo';
         $schema = Schema::string()->transform(fn ($string) => $string === 'foo' ? 'bar' : 'baz');
@@ -21,7 +21,7 @@ class SchemaTest extends TestCase
     }
 
     #[Test]
-    public function transform_multipleTransformsWorkCorrectly()
+    public function transform_multipleTransformsWorkCorrectly(): void
     {
         $value = 'initial';
         $schema = Schema::string()
@@ -35,7 +35,7 @@ class SchemaTest extends TestCase
     }
 
     #[Test]
-    public function replaceNullWithDefault_worksForNull()
+    public function replaceNullWithDefault_worksForNull(): void
     {
         $defaultValue = 'foo';
         $schema = Schema::string()

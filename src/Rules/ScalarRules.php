@@ -8,7 +8,12 @@ use TryAgainLater\Pup\Util\ValueWithErrors;
 
 class ScalarRules
 {
-    public static function oneOf(bool $enabled, array $allowedValues)
+    /**
+     * @param list<int|float|string> $allowedValues
+     *
+     * @return callable(ValueWithErrors): ValueWithErrors
+     */
+    public static function oneOf(bool $enabled, array $allowedValues): callable
     {
         return static function (ValueWithErrors $withErrors) use ($enabled, $allowedValues) {
             return $withErrors->pushErrorsIfValue(

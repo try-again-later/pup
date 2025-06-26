@@ -1,2 +1,5 @@
 parameters:
-  level: 0
+  level: 8
+  ignoreErrors:
+    -
+      identifier: trait.unused

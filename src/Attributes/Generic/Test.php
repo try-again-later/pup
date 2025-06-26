@@ -10,7 +10,11 @@ use Attribute;
 class Test
 {
     public string $name;
+
+    /** @var callable(mixed): bool */
     public $check;
+
+    /** @var string|callable(mixed): string */
     public $message;
     public bool $shortCircuit;
 

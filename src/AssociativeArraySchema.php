@@ -9,6 +9,9 @@ use TryAgainLater\Pup\Util\ValueWithErrors;
 
 class AssociativeArraySchema extends Schema
 {
+    /**
+     * @param array<string, Schema> $shape
+     */
     public function __construct(
         private array $shape,
         SchemaParameters $schemaParameters = new SchemaParameters(),

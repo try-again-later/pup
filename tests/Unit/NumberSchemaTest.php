@@ -10,7 +10,7 @@ use PHPUnit\Framework\Attributes\Test;
 class NumberSchemaTest extends TestCase
 {
     #[Test]
-    public function minIsSatisfied_whenPassedBoundaryNumber()
+    public function minIsSatisfied_whenPassedBoundaryNumber(): void
     {
         $number = 42;
         $schema = Schema::int()->min($number);
@@ -21,7 +21,7 @@ class NumberSchemaTest extends TestCase
     }
 
     #[Test]
-    public function minIsSatisfied_whenPassedLargerNumber()
+    public function minIsSatisfied_whenPassedLargerNumber(): void
     {
         $schema = Schema::int()->min(40);
 
@@ -30,7 +30,7 @@ class NumberSchemaTest extends TestCase
         $this->assertFalse($withErrors->hasErrors());
     }
 
-    public function test_GreaterThanIsNotSatisfied_WhenPassedByBoundaryNumber()
+    public function test_GreaterThanIsNotSatisfied_WhenPassedByBoundaryNumber(): void
     {
         $number = 42;
         $schema = Schema::int()->greaterThan($number);
@@ -41,7 +41,7 @@ class NumberSchemaTest extends TestCase
     }
 
     #[Test]
-    public function greaterThanIsSatisfied_whenPassedLargerNumber()
+    public function greaterThanIsSatisfied_whenPassedLargerNumber(): void
     {
         $schema = Schema::int()->greaterThan(40);
 
@@ -51,7 +51,7 @@ class NumberSchemaTest extends TestCase
     }
 
     #[Test]
-    public function maxIsSatisfied_whenPassedBoundaryNumber()
+    public function maxIsSatisfied_whenPassedBoundaryNumber(): void
     {
         $number = 42;
         $schema = Schema::int()->max($number);
@@ -62,7 +62,7 @@ class NumberSchemaTest extends TestCase
     }
 
     #[Test]
-    public function maxIsSatisfied_whenPassedSmallerNumber()
+    public function maxIsSatisfied_whenPassedSmallerNumber(): void
     {
         $schema = Schema::int()->max(42);
 
@@ -72,7 +72,7 @@ class NumberSchemaTest extends TestCase
     }
 
     #[Test]
-    public function smallerThanIsNotSatisfied_whenPassedBoundaryNumber()
+    public function smallerThanIsNotSatisfied_whenPassedBoundaryNumber(): void
     {
         $number = 42;
         $schema = Schema::int()
@@ -84,7 +84,7 @@ class NumberSchemaTest extends TestCase
     }
 
     #[Test]
-    public function smallerThenIsSatisfied_whenPassedSmallerNumber()
+    public function smallerThenIsSatisfied_whenPassedSmallerNumber(): void
     {
         $schema = Schema::int()->smallerThan(42);
 

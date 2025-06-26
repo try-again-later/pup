@@ -10,7 +10,7 @@ use PHPUnit\Framework\Attributes\Test;
 class StringSchemaTest extends TestCase
 {
     #[Test]
-    public function Length_SatisfiedByExactLength()
+    public function Length_SatisfiedByExactLength(): void
     {
         $string = '12345';
         $schema = Schema::string()
@@ -22,7 +22,7 @@ class StringSchemaTest extends TestCase
     }
 
     #[Test]
-    public function Length_NotSatisfiedByDifferentLength()
+    public function Length_NotSatisfiedByDifferentLength(): void
     {
         $string = '12345';
         $schema = Schema::string()
@@ -34,7 +34,7 @@ class StringSchemaTest extends TestCase
     }
 
     #[Test]
-    public function AllowCoercions_WorksForBools()
+    public function AllowCoercions_WorksForBools(): void
     {
         $value = true;
         $schema = Schema::string()
@@ -47,7 +47,7 @@ class StringSchemaTest extends TestCase
     }
 
     #[Test]
-    public function AllowCoercions_WorksForNumbers()
+    public function AllowCoercions_WorksForNumbers(): void
     {
         $value = 42;
         $schema = Schema::string()
@@ -60,7 +60,7 @@ class StringSchemaTest extends TestCase
     }
 
     #[Test]
-    public function CoercionsFail_WhenNotAllowedExplicitly()
+    public function CoercionsFail_WhenNotAllowedExplicitly(): void
     {
         $value = true;
         $schema = Schema::string();

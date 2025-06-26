@@ -4,6 +4,7 @@ declare(strict_types = 1);
 
 namespace TryAgainLater\Pup\Rules;
 
+use TryAgainLater\Pup\Schema;
 use TryAgainLater\Pup\Util\ValueWithErrors;
 
 class AssociativeArrayRules
@@ -18,6 +19,9 @@ class AssociativeArrayRules
         };
     }
 
+    /**
+     * @param array<string, Schema> $shape
+     */
     public static function validateShape(array $shape): callable
     {
         return static function (ValueWithErrors $arrayWithErrors) use ($shape) {
@@ -31,7 +35,7 @@ class AssociativeArrayRules
                 }
 
                 $arrayWithErrors = $arrayWithErrors->pushErrors(...array_map(
-                    fn ($error) => [$shapeKey, $error],
+                    fn ($error) => is_string($error) ? [$shapeKey, $error] : $error,
                     $memberWithErrors->errors(),
                 ));
 

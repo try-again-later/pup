@@ -47,10 +47,10 @@ class ValueWithErrors
     /**
      * Create an error without value. Use `setValue` to set the value.
      */
-    public static function makeError(mixed ...$errors): self
+    public static function makeError(string ...$errors): self
     {
         return new self(
-            errors: $errors,
+            errors: array_values($errors),
         );
     }
 
@@ -59,6 +59,9 @@ class ValueWithErrors
         return new self;
     }
 
+    /**
+     * @param list<string|array{string, string}> $errors
+     */
     public function __construct(
         private array $errors = [],
         private mixed $value = null,
@@ -77,11 +80,17 @@ class ValueWithErrors
         return count($this->errors) > 0;
     }
 
+    /**
+     * @return array{mixed, list<string|array{string, string}>}
+     */
     public function get(): array
     {
         return [$this->value(), $this->errors()];
     }
 
+    /**
+     * @return array{null|mixed, list<string|array{string, string}>}
+     */
     public function tryGet(): array
     {
         return [$this->hasValue() ? $this->value() : null, $this->errors()];
@@ -95,7 +104,10 @@ class ValueWithErrors
         return $this->value;
     }
 
-    public function errors(): mixed
+    /**
+     * @return list<string|array{string, string}>
+     */
+    public function errors(): array
     {
         return $this->errors;
     }
@@ -263,6 +275,9 @@ class ValueWithErrors
         return $this;
     }
 
+    /**
+     * @param string|array{string, string} ...$errors
+     */
     public function pushErrors(mixed ...$errors): self
     {
         if ($this->stop || count($errors) === 0) {
@@ -270,7 +285,7 @@ class ValueWithErrors
         }
 
         $newValueWithErrors = clone $this;
-        $newValueWithErrors->errors = [...array_values($this->errors), ...array_values($errors)];
+        $newValueWithErrors->errors = [...$this->errors, ...array_values($errors)];
         return $newValueWithErrors;
     }
 

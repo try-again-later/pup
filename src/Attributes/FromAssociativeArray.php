@@ -35,6 +35,12 @@ class FromAssociativeArray
         return !empty($reflectionProperty->getAttributes($attributeClass));
     }
 
+    /**
+     * @template T
+     * @param class-string<T> $attributeClass
+     *
+     * @return T
+     */
     private static function getInstance(
         ReflectionProperty $reflectionProperty,
         string $attributeClass,
@@ -105,7 +111,7 @@ class FromAssociativeArray
     public static function setScalarSchemaOptions(
         ReflectionProperty $reflectionProperty,
         ScalarSchema $schema,
-    )
+    ): ScalarSchema
     {
         if (self::hasAttribute($reflectionProperty, OneOf::class)) {
             $oneOfAttributeInstance = self::getInstance($reflectionProperty, OneOf::class);
@@ -115,6 +121,9 @@ class FromAssociativeArray
         return $schema;
     }
 
+    /**
+     * @param class-string $class
+     */
     public static function schemaFromClass(string $class): AssociativeArraySchema
     {
         $reflectionClass = new ReflectionClass($class);
@@ -141,25 +150,31 @@ class FromAssociativeArray
                 $type = substr($type, 1);
             }
 
-            $createSchema = match ($type) {
-                'int' => fn (...$args) => Schema::int(...$args),
-                'float' => fn (...$args) => Schema::float(...$args),
-                'string' => fn (...$args) => Schema::string(...$args),
-                'bool' => fn (...$args) =>Schema::bool(...$args),
-                default => null,
-            };
-
-            if (is_null($createSchema)) {
-                continue;
-            }
-
-            $schema = $createSchema(new SchemaParameters(
+            $schemaParameters = new SchemaParameters(
                 required: self::hasAttribute($reflectionProperty, Required::class),
-                nullable: $reflectionProperty->getType()->allowsNull(),
+                nullable: $reflectionProperty->getType()?->allowsNull() ?? false,
                 replaceNullWithDefault:
                     self::hasAttribute($reflectionProperty, ReplaceNullWithDefault::class),
                 allowCoercions: self::hasAttribute($reflectionProperty, AllowCoercions::class),
-            ));
+            );
+
+            if ($type == 'int') {
+                $schema = Schema::int($schemaParameters);
+                $schema = self::setNumberSchemaOptions($reflectionProperty, $schema);
+                $schema = self::setScalarSchemaOptions($reflectionProperty, $schema);
+            } else if ($type == 'float') {
+                $schema = Schema::float($schemaParameters);
+                $schema = self::setNumberSchemaOptions($reflectionProperty, $schema);
+                $schema = self::setScalarSchemaOptions($reflectionProperty, $schema);
+            } else if ($type == 'string') {
+                $schema = Schema::string($schemaParameters);
+                $schema = self::setStringSchemaOptions($reflectionProperty, $schema);
+                $schema = self::setScalarSchemaOptions($reflectionProperty, $schema);
+            } else if ($type == 'bool') {
+                $schema = Schema::bool($schemaParameters);
+            } else {
+                continue;
+            }
 
             if ($reflectionProperty->hasDefaultValue()) {
                 $schema = $schema->default($reflectionProperty->getDefaultValue());
@@ -180,16 +195,6 @@ class FromAssociativeArray
                 );
             }
 
-            if ($type === 'string') {
-                $schema = self::setStringSchemaOptions($reflectionProperty, $schema);
-            }
-            if ($type === 'int' || $type === 'float') {
-                $schema = self::setNumberSchemaOptions($reflectionProperty, $schema);
-            }
-            if (in_array($type, ['int', 'float', 'string'], strict: true)) {
-                $schema = self::setScalarSchemaOptions($reflectionProperty, $schema);
-            }
-
             $arrayKey = $propertyAttributeInstance->name ?? $reflectionProperty->getName();
             $shape[$arrayKey] = $schema;
         }
@@ -197,11 +202,18 @@ class FromAssociativeArray
         return Schema::associativeArray($shape);
     }
 
+    /**
+     * @template T of object
+     * @param class-string<T> $class
+     * @param array<string, mixed> $array
+     *
+     * @return array{null|T, list<string|array{string, string}>}
+     */
     public static function tryInstance(
         string $class,
         array $array,
         ?AssociativeArraySchema $schema = null,
-    )
+    ): array
     {
         if (!isset($schema)) {
             $schema = self::schemaFromClass($class);
@@ -230,6 +242,13 @@ class FromAssociativeArray
         return [$instance, $arrayWithErrors->errors()];
     }
 
+    /**
+     * @template T of object
+     * @param class-string<T> $class
+     * @param array<string, mixed> $array
+     *
+     * @return T
+     */
     public static function instance(
         string $class,
         array $array,
@@ -241,14 +260,21 @@ class FromAssociativeArray
             $message = 'Errors while parsing associative array:' . PHP_EOL;
             $message .= implode(PHP_EOL, array_map(
                 static function ($keyError) {
-                    [$key, $error] = $keyError;
-                    return "[$key] => $error";
+                    if (is_string($keyError)) {
+                        return $keyError;
+                    } else {
+                        [$key, $error] = $keyError;
+                        return "[$key] => $error";
+                    }
                 },
                 $errors,
             ));
 
             throw new InvalidArgumentException($message);
         }
+
+        assert(!is_null($instance));
+
         return $instance;
     }
 }

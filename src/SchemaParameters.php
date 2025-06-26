@@ -6,6 +6,9 @@ namespace TryAgainLater\Pup;
 
 class SchemaParameters
 {
+    /**
+     * @param list<callable(mixed): mixed> $userDefinedTransforms
+     */
     public function __construct(
         public bool $required = false,
         public bool $nullable = false,

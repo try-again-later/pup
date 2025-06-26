@@ -9,7 +9,7 @@ use TryAgainLater\Pup\Schema;
 class AssociativeArraySchemaTest extends TestCase
 {
     #[Test]
-    public function noValidationErrors_givenCorrectArray()
+    public function noValidationErrors_givenCorrectArray(): void
     {
         $array = [
             'first' => 42,

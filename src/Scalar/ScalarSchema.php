@@ -10,6 +10,7 @@ use TryAgainLater\Pup\Util\ValueWithErrors;
 
 abstract class ScalarSchema extends Schema
 {
+    /** @var null|list<int|float|string> */
     private ?array $allowedValues = null;
 
     public function validate(mixed $value = null, bool $nothing = false): ValueWithErrors
@@ -20,10 +21,13 @@ abstract class ScalarSchema extends Schema
             ->next(ScalarRules::oneOf(isset($this->allowedValues), $this->allowedValues ?? []));
     }
 
+    /**
+     * @param int|float|string ...$allowedValues
+     */
     public function oneOf(mixed ...$allowedValues): static
     {
         $newSchema = clone $this;
-        $newSchema->allowedValues = $allowedValues;
+        $newSchema->allowedValues = array_values($allowedValues);
         return $newSchema;
     }
 }
