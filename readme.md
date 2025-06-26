@@ -21,142 +21,63 @@
   </a>
 </p>
 
-A small PHP library for value parsing and validation inspired by
-[yup](https://github.com/jquense/yup).
+PHP библиотека для валидации с интерфейсом, вдохновлённым [yup](https://github.com/jquense/yup).
+Позволяет парсить и создавать объекты из сырых массивов в соответствии с наобором правил, указанных
+в атрибутах на полях класса.
 
-## Examples
+---
 
-### Create schema using builder syntax
+PHP library for value parsing and validation with an interface inspired by
+[yup](https://github.com/jquense/yup). Allows you to parse and create objects from raw arrays
+according to the ruleset specified via attributes applied to the class fields.
 
-```php
-use TryAgainLater\Pup\Schema;
-
-$userSchema = Schema::associativeArray([
-    'name' => Schema::string()
-        ->required()
-        ->transform(fn ($name) => "NAME = $name"),
-
-    'age' => Schema::int()
-        ->positive(),
-
-    'email' => Schema::string()
-        ->required()
-        ->max(255),
-
-    'website' => Schema::string()
-        ->default('No website'),
-
-    'sex' => Schema::string()
-        ->nullable()
-        ->oneOf('male', 'female'),
-
-    'allowSendingEmails' => Schema::bool()
-        ->default(false)
-        ->test(
-            name: 'Is string bool',
-            check: fn ($string) => in_array($string, ['true', 'false'], strict: true),
-            message: 'Only "true" or "false" strings are allowed.',
-            shortCircuit: true,
-        )
-        ->transform(fn ($string) => match ($string) {
-            'true', => true,
-            'false' => false,
-        }),
-]);
-
-$user = [
-    'name' => 'John',
-    'age' => 42,
-    'email' => 'john@example.com',
-    'sex' => 'male',
-    'allowSendingEmails' => 'true',
-];
-
-// validatedUser: [
-//   name               => 'NAME = John',
-//   age                => -42,
-//   email              => 'john@example.com',
-//   website            => 'No website',
-//   sex                => 'male',
-//   allowSendingEmails => bool(true)
-// ]
-
-// errors: [
-//   ['age', 'The number must be greater than 0']
-// ]
-[$validatedUser, $errors] = $userSchema->validate($user)->tryGet();
-```
-
-### Create schema by annotating existing class
+## Example
 
 ```php
 use TryAgainLater\Pup\Attributes\{FromAssociativeArray, MakeParsed};
-use TryAgainLater\Pup\Attributes\Generic\{OneOf, ParsedProperty, Required, Transform, Test};
+use TryAgainLater\Pup\Attributes\Generic\{ParsedProperty, Required};
 use TryAgainLater\Pup\Attributes\Number\Positive;
 use TryAgainLater\Pup\Attributes\String\MaxLength;
 
 #[FromAssociativeArray]
 class User
 {
-    public static function transformName(string $name): string
-    {
-        return "NAME = $name";
-    }
-
     #[ParsedProperty]
     #[Required]
-    #[Transform([self::class, 'transformName'])]
+    #[MaxLength(8)]
     private string $name;
 
     #[ParsedProperty]
     #[Positive]
     private int $age;
 
-    #[ParsedProperty]
-    #[Required]
-    #[MaxLength(255)]
-    private string $email;
-
-    #[ParsedProperty]
-    private string $website = 'No website';
-
-    #[ParsedProperty]
-    #[OneOf('male', 'female')]
-    private ?string $sex = null;
-
-    public static function validateBoolString(string $string): bool
-    {
-        return in_array($string, ['true', 'false'], strict: true);
-    }
-
-    public static function stringToBool(string $string): bool
-    {
-        return match ($string) {
-            'true', => true,
-            'false' => false,
-        };
-    }
-
-    #[ParsedProperty('emails')]
-    #[Test(
-        name: 'Is string bool',
-        check: [self::class, 'validateBoolString'],
-        message: 'Only "true" or "false" strings are allowed.',
-        shortCircuit: true,
-    )]
-    #[Transform([self::class, 'stringToBool'])]
-    private bool $allowSendingEmails = false;
-
     use MakeParsed;
 }
 
-// Throws InvalidArgumentException with the following message:
-// "[age] => The number must be greater than 0."
+// Creates the object without any issues:
+$user = User::from([
+    'name' => 'John',
+    'age' => 42,
+]);
+
+// Throws an exception because of negative age:
 $user = User::from([
     'name' => 'John',
     'age' => -42,
-    'email' => 'john@example.com',
-    'sex' => 'male',
-    'emails' => 'true',
 ]);
+
+// Throws an exception because the name is too long:
+$user = User::from([
+    'name' => 'John Doe Blah Blah Blah',
+    'age' => 42,
+]);
+```
+
+More examples under the [examples folder](./examples/).
+
+## Running tests and linter (on the library iteself)
+
+```sh
+composer test
+composer lint
 ```
