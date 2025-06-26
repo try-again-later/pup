@@ -2,12 +2,14 @@
 
 declare(strict_types = 1);
 
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use TryAgainLater\Pup\Schema;
 
 class AssociativeArraySchemaTest extends TestCase
 {
-    public function test_NoValidationErrors_GivenCorrectArray()
+    #[Test]
+    public function noValidationErrors_givenCorrectArray()
     {
         $array = [
             'first' => 42,

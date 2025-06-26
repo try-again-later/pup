@@ -5,10 +5,12 @@ declare(strict_types = 1);
 use TryAgainLater\Pup\Schema;
 
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 class StringSchemaTest extends TestCase
 {
-    public function test_Length_SatisfiedByExactLength()
+    #[Test]
+    public function Length_SatisfiedByExactLength()
     {
         $string = '12345';
         $schema = Schema::string()
@@ -19,7 +21,8 @@ class StringSchemaTest extends TestCase
         $this->assertCount(0, $errors);
     }
 
-    public function test_Length_NotSatisfiedByDifferentLength()
+    #[Test]
+    public function Length_NotSatisfiedByDifferentLength()
     {
         $string = '12345';
         $schema = Schema::string()
@@ -30,7 +33,8 @@ class StringSchemaTest extends TestCase
         $this->assertNotCount(0, $errors);
     }
 
-    public function test_AllowCoercions_WorksForBools()
+    #[Test]
+    public function AllowCoercions_WorksForBools()
     {
         $value = true;
         $schema = Schema::string()
@@ -42,7 +46,8 @@ class StringSchemaTest extends TestCase
         $this->assertCount(0, $errors);
     }
 
-    public function test_AllowCoercions_WorksForNumbers()
+    #[Test]
+    public function AllowCoercions_WorksForNumbers()
     {
         $value = 42;
         $schema = Schema::string()
@@ -54,7 +59,8 @@ class StringSchemaTest extends TestCase
         $this->assertCount(0, $errors);
     }
 
-    public function test_CoercionsFail_WhenNotAllowedExplicitly()
+    #[Test]
+    public function CoercionsFail_WhenNotAllowedExplicitly()
     {
         $value = true;
         $schema = Schema::string();

@@ -3,6 +3,7 @@
 declare(strict_types = 1);
 
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 use TryAgainLater\Pup\Util\ValueWithErrors;
 
@@ -10,7 +11,8 @@ class ValueWithErrorsTest extends TestCase
 {
     // ::makeValue()
 
-    public function testMakeValue_createsValue()
+    #[Test]
+    public function makeValue_createsValue()
     {
         $value = 'some value';
         $withErrors = ValueWithErrors::makeValue($value);
@@ -22,7 +24,8 @@ class ValueWithErrorsTest extends TestCase
         $this->assertEquals($value, $actualValue);
     }
 
-    public function testMakeValue_doesNotCreateErrors()
+    #[Test]
+    public function makeValue_doesNotCreateErrors()
     {
         $withErrors = ValueWithErrors::makeValue('some value');
 
@@ -35,7 +38,8 @@ class ValueWithErrorsTest extends TestCase
 
     // ::makeError()
 
-    public function testMakeError_createsSingleError()
+    #[Test]
+    public function makeError_createsSingleError()
     {
         $error = 'some error';
         $withErrors = ValueWithErrors::makeError($error);
@@ -48,7 +52,8 @@ class ValueWithErrorsTest extends TestCase
         $this->assertContains($error, $actualErrors);
     }
 
-    public function testMakeError_doesNotCreateValue()
+    #[Test]
+    public function makeError_doesNotCreateValue()
     {
         $withErrors = ValueWithErrors::makeError('some error');
 
@@ -61,7 +66,8 @@ class ValueWithErrorsTest extends TestCase
 
     // ::makeNothing()
 
-    public function testMakeNothing_doesNotCreateValue()
+    #[Test]
+    public function makeNothing_doesNotCreateValue()
     {
         $withErrors = ValueWithErrors::makeNothing();
 
@@ -72,7 +78,8 @@ class ValueWithErrorsTest extends TestCase
         $withErrors->value();
     }
 
-    public function testMakeNothing_doesNotCreateError()
+    #[Test]
+    public function makeNothing_doesNotCreateError()
     {
         $withErrors = ValueWithErrors::makeNothing();
 
@@ -85,7 +92,8 @@ class ValueWithErrorsTest extends TestCase
 
     // ->pushErrors()
 
-    public function testPushErrors_createsErrors_whenThereAreNoneInitially()
+    #[Test]
+    public function pushErrors_createsErrors_whenThereAreNoneInitially()
     {
         $errors = ['first error', 'second error'];
         $withErrors = ValueWithErrors::makeNothing();
@@ -98,7 +106,8 @@ class ValueWithErrorsTest extends TestCase
         $this->assertEqualsCanonicalizing($errors, $actualErrors);
     }
 
-    public function testPushErrors_appendsErrors_whenThereAreAlreadySome()
+    #[Test]
+    public function pushErrors_appendsErrors_whenThereAreAlreadySome()
     {
         $initialErrors = ['first error'];
         $appendedErrors = ['second error', 'third error'];
@@ -115,7 +124,8 @@ class ValueWithErrorsTest extends TestCase
 
     // ->pushErrorsIfValue()
 
-    public function testPushErrorsIfValue_doesNothing_whenThePredicateIsFalse()
+    #[Test]
+    public function pushErrorsIfValue_doesNothing_whenThePredicateIsFalse()
     {
         $value = 42;
         $withErrors = ValueWithErrors::makeValue($value);
@@ -129,7 +139,8 @@ class ValueWithErrorsTest extends TestCase
         $this->assertEquals($withErrors, $afterPushErrorsIfValue);
     }
 
-    public function testPushErrorsIfValue_appendsErrors_whenThePredicateIsTrue()
+    #[Test]
+    public function pushErrorsIfValue_appendsErrors_whenThePredicateIsTrue()
     {
         $value = 42;
         $appendedErrors = ['first error', 'second error'];
@@ -144,7 +155,8 @@ class ValueWithErrorsTest extends TestCase
         $this->assertEqualsCanonicalizing($appendedErrors, $actualErrors);
     }
 
-    public function testPushErrorsIfValue_throwsLogicException_whenThereIsNoValue()
+    #[Test]
+    public function pushErrorsIfValue_throwsLogicException_whenThereIsNoValue()
     {
         $withErrors = ValueWithErrors::makeNothing();
 
@@ -155,7 +167,8 @@ class ValueWithErrorsTest extends TestCase
         );
     }
 
-    public function testPushErrorsIfValue_appendsErrorFromCallable_whenThePredicateIsTrue()
+    #[Test]
+    public function pushErrorsIfValue_appendsErrorFromCallable_whenThePredicateIsTrue()
     {
         $value = 'some value';
         $errorGenerator = fn ($value) => "Error because of '$value'";
@@ -173,7 +186,8 @@ class ValueWithErrorsTest extends TestCase
 
     // ->dropErrors()
 
-    public function testDropErrors_removesErrors()
+    #[Test]
+    public function dropErrors_removesErrors()
     {
         $withErrors = ValueWithErrors::makeError('some error');
 
@@ -185,7 +199,8 @@ class ValueWithErrorsTest extends TestCase
 
     // ->mapValue
 
-    public function testMapValue_mapsValue_whenSignleMappingProvided()
+    #[Test]
+    public function mapValue_mapsValue_whenSignleMappingProvided()
     {
         $initialValue = 42;
         $mapping = fn ($x) => 2 * $x;
@@ -198,7 +213,8 @@ class ValueWithErrorsTest extends TestCase
         $this->assertEquals($valueAfterMapping, $actualValueAfterMapping);
     }
 
-    public function testMapValue_mapsValue_whenMultipleMappingsProvided()
+    #[Test]
+    public function mapValue_mapsValue_whenMultipleMappingsProvided()
     {
         $initialValue = 42;
         $firstMapping = fn ($x) => 2 * $x;
@@ -212,7 +228,8 @@ class ValueWithErrorsTest extends TestCase
         $this->assertEquals($valueAfterMapping, $actualValueAfterMapping);
     }
 
-    public function testMapValue_throwsLogicException_whenThereIsNoValue()
+    #[Test]
+    public function mapValue_throwsLogicException_whenThereIsNoValue()
     {
         $withErrors = ValueWithErrors::makeNothing();
 
@@ -222,7 +239,8 @@ class ValueWithErrorsTest extends TestCase
 
     // ->next()
 
-    public function testNext_appliesSingleCheck_whenCheckReturnsNewWrapper()
+    #[Test]
+    public function next_appliesSingleCheck_whenCheckReturnsNewWrapper()
     {
         $initial = ValueWithErrors::makeNothing();
         $returnedFromCheck = ValueWithErrors::makeNothing();
@@ -232,7 +250,8 @@ class ValueWithErrorsTest extends TestCase
         $this->assertEquals($returnedFromCheck, $returnedFromNext);
     }
 
-    public function testNext_returnsSameWrapper_whenCheckDoesNotReturnWrapper()
+    #[Test]
+    public function next_returnsSameWrapper_whenCheckDoesNotReturnWrapper()
     {
         $initial = ValueWithErrors::makeNothing();
 
@@ -241,7 +260,8 @@ class ValueWithErrorsTest extends TestCase
         $this->assertEquals($initial, $returnedFromNext);
     }
 
-    public function testNext_appliesMultipleChecks()
+    #[Test]
+    public function next_appliesMultipleChecks()
     {
         $initial = ValueWithErrors::makeNothing();
         $afterFirstCheck = 'Not ValueWithErrors';

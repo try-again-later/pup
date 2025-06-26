@@ -299,7 +299,7 @@ class ValueWithErrors
 
         return $this->nextIf(
             $if,
-            static function (self $withErrors) use ($errors) {
+            function (self $withErrors) use ($errors) {
                 $evaluatedErrors = array_map(
                     fn ($error) => is_callable($error) ? $error($this) : $error,
                     $errors,

@@ -5,10 +5,12 @@ declare (strict_types = 1);
 use TryAgainLater\Pup\Schema;
 
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 class SchemaTest extends TestCase
 {
-    public function test_Transform_SingleTransformWorksCorrectly()
+    #[Test]
+    public function transform_singleTransformWorksCorrectly()
     {
         $value = 'foo';
         $schema = Schema::string()->transform(fn ($string) => $string === 'foo' ? 'bar' : 'baz');
@@ -18,7 +20,8 @@ class SchemaTest extends TestCase
         $this->assertEquals('bar', $validatedValue);
     }
 
-    public function test_Transform_MultipleTransformsWorkCorrectly()
+    #[Test]
+    public function transform_multipleTransformsWorkCorrectly()
     {
         $value = 'initial';
         $schema = Schema::string()
@@ -31,7 +34,8 @@ class SchemaTest extends TestCase
         $this->assertEquals('after second transform', $validatedValue);
     }
 
-    public function test_ReplaceNullWithDefault_WorksForNull()
+    #[Test]
+    public function replaceNullWithDefault_worksForNull()
     {
         $defaultValue = 'foo';
         $schema = Schema::string()

@@ -5,10 +5,12 @@ declare(strict_types = 1);
 use TryAgainLater\Pup\Schema;
 
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 class NumberSchemaTest extends TestCase
 {
-    public function test_MinIsSatisfied_WhenPassedBoundaryNumber()
+    #[Test]
+    public function minIsSatisfied_whenPassedBoundaryNumber()
     {
         $number = 42;
         $schema = Schema::int()->min($number);
@@ -18,7 +20,8 @@ class NumberSchemaTest extends TestCase
         $this->assertFalse($withErrors->hasErrors());
     }
 
-    public function test_MinIsSatisfied_WhenPassedLargerNumber()
+    #[Test]
+    public function minIsSatisfied_whenPassedLargerNumber()
     {
         $schema = Schema::int()->min(40);
 
@@ -37,7 +40,8 @@ class NumberSchemaTest extends TestCase
         $this->assertTrue($withErrors->hasErrors());
     }
 
-    public function test_GreaterThanIsSatisfied_WhenPassedLargerNumber()
+    #[Test]
+    public function greaterThanIsSatisfied_whenPassedLargerNumber()
     {
         $schema = Schema::int()->greaterThan(40);
 
@@ -46,7 +50,8 @@ class NumberSchemaTest extends TestCase
         $this->assertFalse($withErrors->hasErrors());
     }
 
-    public function test_MaxIsSatisfied_WhenPassedBoundaryNumber()
+    #[Test]
+    public function maxIsSatisfied_whenPassedBoundaryNumber()
     {
         $number = 42;
         $schema = Schema::int()->max($number);
@@ -56,7 +61,8 @@ class NumberSchemaTest extends TestCase
         $this->assertFalse($withErrors->hasErrors());
     }
 
-    public function test_MaxIsSatisfied_WhenPassedSmallerNumber()
+    #[Test]
+    public function maxIsSatisfied_whenPassedSmallerNumber()
     {
         $schema = Schema::int()->max(42);
 
@@ -65,7 +71,8 @@ class NumberSchemaTest extends TestCase
         $this->assertFalse($withErrors->hasErrors());
     }
 
-    public function test_SmallerThanIsNotSatisfied_WhenPassedBoundaryNumber()
+    #[Test]
+    public function smallerThanIsNotSatisfied_whenPassedBoundaryNumber()
     {
         $number = 42;
         $schema = Schema::int()
@@ -76,7 +83,8 @@ class NumberSchemaTest extends TestCase
         $this->assertTrue($withErrors->hasErrors());
     }
 
-    public function test_SmallerThenIsSatisfied_WhenPassedSmallerNumber()
+    #[Test]
+    public function smallerThenIsSatisfied_whenPassedSmallerNumber()
     {
         $schema = Schema::int()->smallerThan(42);
 
